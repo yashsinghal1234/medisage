@@ -9,29 +9,28 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, dateOfBirth, bloodGroup } = req.body;
+    const { name, email, password, dateOfBirth, bloodGroup, allergies, chronicConditions, emergencyContact } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password || 'password123', 10);
 
-    // Create user
     const user = new User({
       name,
       email,
       password: hashedPassword,
       dateOfBirth,
-      bloodGroup,
+      bloodGroup: bloodGroup || 'O+ Positive',
+      allergies: allergies || [],
+      chronicConditions: chronicConditions || [],
+      emergencyContact: emergencyContact || { name: 'Emergency Contact', relationship: 'Family', phone: '' },
     });
 
     await user.save();
 
-    // Generate token
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET || 'your_jwt_secret_key_here',
@@ -45,6 +44,11 @@ router.post('/register', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        bloodGroup: user.bloodGroup,
+        dateOfBirth: user.dateOfBirth,
+        allergies: user.allergies,
+        chronicConditions: user.chronicConditions,
+        emergencyContact: user.emergencyContact,
       },
     });
   } catch (error) {
@@ -57,19 +61,16 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Check password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate token
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET || 'your_jwt_secret_key_here',
@@ -83,43 +84,15 @@ router.post('/login', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        bloodGroup: user.bloodGroup,
+        dateOfBirth: user.dateOfBirth,
+        allergies: user.allergies,
+        chronicConditions: user.chronicConditions,
+        emergencyContact: user.emergencyContact,
       },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-});
-
-// Forgot Password
-router.post('/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    // Find user
-    const user = await User.findOne({ email });
-
-    if (user) {
-      // In a real application, you would:
-      // 1. Generate a password reset token
-      // 2. Send an email with the reset link
-      // 3. Store the token in the database with an expiration time
-
-      // For now, we'll log the password (NOT RECOMMENDED FOR PRODUCTION)
-      // You should integrate with nodemailer or another email service
-      console.log('Password reset requested for:', email);
-      console.log('User found:', user.name);
-      console.log('Note: In production, send email with password reset link');
-    } else {
-      console.log('Password reset requested for non-existent email:', email);
-    }
-
-    // Always return success to prevent email enumeration (security best practice)
-    res.json({
-      message: 'If an account exists with this email, a password reset link has been sent.',
-    });
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ error: 'An error occurred. Please try again later.' });
   }
 });
 
@@ -136,11 +109,11 @@ router.get('/profile', authMiddleware, async (req, res) => {
 // Update user profile
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
-    const { name, dateOfBirth, bloodGroup, allergies, chronicConditions } = req.body;
+    const { name, dateOfBirth, bloodGroup, allergies, chronicConditions, emergencyContact } = req.body;
 
     const user = await User.findByIdAndUpdate(
       req.userId,
-      { name, dateOfBirth, bloodGroup, allergies, chronicConditions },
+      { name, dateOfBirth, bloodGroup, allergies, chronicConditions, emergencyContact },
       { new: true }
     ).select('-password');
 

@@ -1,20 +1,378 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  :root {
-    --primary-color: #4f46e5;
-    --primary-dark: #4338ca;
-    --background-light: #f5f5f7;
-    --text-dark: #1a1a1a;
-    --text-gray: #6b7280;
-    --white: #ffffff;
+/* Ease Health Theme Configuration for Tailwind v4 */
+@theme {
+  /* Colors */
+  --color-forest-ink: #0f3e17;
+  --color-sage-mist: #a9d4b2;
+  --color-keylime-wash: #e1f4df;
+  --color-mint-veil: #cfe7d3;
+  --color-slate-hush: #b6ced5;
+  --color-cream-paper: #fffefc;
+  --color-charcoal: #222222;
+  --color-border-mist: #efeeeb;
+  --color-forest-shadow: #0c2f10;
+
+  /* Typography */
+  --font-faire-octave: 'Playfair Display', 'Newsreader', 'Cormorant Garamond', 'Faire Octave', Georgia, serif;
+  --font-suisse-intl: 'Plus Jakarta Sans', 'Inter', 'Suisse Intl', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Typography — Scale */
+  --text-caption: 10px;
+  --leading-caption: 1.61;
+  --text-body: 14px;
+  --leading-body: 1.5;
+  --text-subheading: 18px;
+  --leading-subheading: 1.3;
+  --text-heading-sm: 23px;
+  --leading-heading-sm: 1.5;
+  --text-heading: 40px;
+  --leading-heading: 1.35;
+  --tracking-heading: -0.4px;
+  --text-heading-lg: 56px;
+  --leading-heading-lg: 1.2;
+  --tracking-heading-lg: -1.68px;
+  --text-display: 74px;
+  --leading-display: 1.05;
+  --tracking-display: -2.22px;
+
+  /* Spacing */
+  --spacing-4: 4px;
+  --spacing-7: 7px;
+  --spacing-9: 9px;
+  --spacing-11: 11px;
+  --spacing-14: 14px;
+  --spacing-18: 18px;
+  --spacing-21: 21px;
+  --spacing-28: 28px;
+  --spacing-35: 35px;
+  --spacing-42: 42px;
+  --spacing-49: 49px;
+  --spacing-56: 56px;
+  --spacing-70: 70px;
+  --spacing-76: 76px;
+  --spacing-99: 99px;
+  --spacing-156: 156px;
+
+  /* Border Radius */
+  --radius-lg: 7.04px;
+  --radius-xl: 14.08px;
+  --radius-full: 999px;
+  --radius-full-2: 9999px;
+}
+
+:root {
+  /* Named aliases mapping to theme tokens */
+  --font-serif: var(--font-faire-octave);
+  --font-sans: var(--font-suisse-intl);
+
+  --page-max-width: 1480px;
+  --section-gap: 80px;
+  --card-padding: 35px;
+  --element-gap: 18px;
+
+  --radius-nav: 7px;
+  --radius-cards: 18px;
+  --radius-badges: 999px;
+  --radius-buttons: 18px;
+  --radius-sections: 9999px;
+
+  /* Surfaces */
+  --surface-cream-paper: #fffefc;
+  --surface-keylime-wash: #e1f4df;
+  --surface-mint-veil: #cfe7d3;
+  --surface-sage-mist: #a9d4b2;
+  --surface-slate-hush: #b6ced5;
+}
+
+/* CSS Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  background-color: var(--color-cream-paper);
+  color: var(--color-charcoal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-suisse-intl);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--color-charcoal);
+  background-color: var(--color-cream-paper);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Typography Base Rules */
+h1, h2, h3, h4, h5, h6, .serif-heading {
+  font-family: var(--font-faire-octave);
+  font-weight: 400;
+  color: var(--color-forest-ink);
+  letter-spacing: var(--tracking-heading);
+}
+
+h1 {
+  font-size: var(--text-heading-lg);
+  line-height: var(--leading-heading-lg);
+  letter-spacing: var(--tracking-heading-lg);
+}
+
+h2 {
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+}
+
+h3 {
+  font-size: var(--text-heading-sm);
+  line-height: var(--leading-heading-sm);
+}
+
+p {
+  color: var(--color-charcoal);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Crisp & Smooth Flowing Dashed Lines */
+@keyframes flowDashesForward {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.flowing-dash-line {
+  stroke-dasharray: 4 4;
+  animation: flowDashesForward 1.2s linear infinite;
+  will-change: stroke-dashoffset;
+}
+
+/* Eyebrow Category Tag */
+.eyebrow-label {
+  font-family: var(--font-suisse-intl);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-forest-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--spacing-11);
+}
+
+/* Outer Container with Balanced Margins */
+.container {
+  max-width: var(--page-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 28px;
+  padding-right: 28px;
+  width: 100%;
+}
+
+.section-padding {
+  padding-top: var(--section-gap);
+  padding-bottom: var(--section-gap);
+}
+
+/* Surfaces & Cards — Strictly Shadowless Depth */
+.surface-cream {
+  background-color: var(--color-cream-paper);
+}
+
+.surface-keylime {
+  background-color: var(--color-keylime-wash);
+}
+
+.surface-mint {
+  background-color: var(--color-mint-veil);
+}
+
+.surface-sage {
+  background-color: var(--color-sage-mist);
+}
+
+.surface-slate {
+  background-color: var(--color-slate-hush);
+}
+
+.card-rounded {
+  border-radius: var(--radius-cards);
+  box-shadow: none !important;
+}
+
+/* Deep Forest Action Button (#0f3e17) */
+.btn-forest-action {
+  background-color: #0f3e17 !important;
+  color: #fffefc !important;
+}
+
+/* Buttons */
+.btn-forest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-9);
+  background-color: #0f3e17 !important;
+  color: #fffefc !important;
+  font-family: var(--font-suisse-intl);
+  font-size: var(--text-body);
+  font-weight: 400;
+  padding: 14px 24px;
+  border-radius: var(--radius-buttons);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.btn-forest-pill {
+  border-radius: var(--radius-badges);
+  padding: 11px 24px;
+  background-color: #0f3e17 !important;
+  color: #fffefc !important;
+}
+
+.btn-forest-lg {
+  padding: 21px 42px;
+  font-size: 16px;
+  border-radius: var(--radius-buttons);
+  background-color: #0f3e17 !important;
+  color: #fffefc !important;
+}
+
+.btn-secondary-tint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-9);
+  background-color: var(--color-keylime-wash);
+  color: var(--color-forest-ink);
+  font-family: var(--font-suisse-intl);
+  font-size: var(--text-body);
+  font-weight: 600;
+  padding: 14px 21px;
+  border-radius: var(--radius-buttons);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-ghost-cream {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-9);
+  background-color: var(--color-cream-paper);
+  color: var(--color-forest-ink);
+  font-family: var(--font-suisse-intl);
+  font-size: var(--text-body);
+  font-weight: 400;
+  padding: 14px 21px;
+  border-radius: var(--radius-buttons);
+  border: none;
+  cursor: pointer;
+}
+
+/* Pill Badges & Tags */
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--color-cream-paper);
+  color: var(--color-forest-ink);
+  font-family: var(--font-suisse-intl);
+  font-size: var(--text-body);
+  font-weight: 400;
+  padding: 9px 14px;
+  border-radius: var(--radius-badges);
+  border: none;
+  box-shadow: none;
+}
+
+.pill-badge-sm {
+  font-size: 12px;
+  padding: 5px 11px;
+}
+
+.pill-badge-sage {
+  background-color: var(--color-sage-mist);
+  color: var(--color-forest-ink);
+}
+
+.pill-badge-keylime {
+  background-color: var(--color-keylime-wash);
+  color: var(--color-forest-ink);
+}
+
+/* Hairline Dividers */
+.divider-mist {
+  height: 1px;
+  background-color: var(--color-border-mist);
+  width: 100%;
+  border: none;
+}
+
+/* Inputs & Form Elements */
+.input-botanical {
+  width: 100%;
+  background-color: var(--color-cream-paper);
+  border: 1px solid var(--color-border-mist);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-family: var(--font-suisse-intl);
+  font-size: var(--text-body);
+  color: var(--color-charcoal);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.input-botanical:focus {
+  border-color: var(--color-forest-ink);
+}
+
+.input-botanical::placeholder {
+  color: #888888;
+}
+
+/* Botanical Grid Utilities */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-28);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-28);
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
-  body {
-    @apply bg-background-light text-text-dark;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-      "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
   }
 }

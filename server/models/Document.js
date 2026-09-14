@@ -44,6 +44,28 @@ const documentSchema = new mongoose.Schema({
     hospital: String,
     diagnosis: String,
     medications: [String],
+    biomarkers: [{
+      name: String,
+      value: String,
+      status: String, // 'normal' | 'elevated' | 'optimal' | 'borderline'
+    }],
+    extractedEntities: [{
+      id: String,
+      code: String,
+      name: String,
+      value: String,
+      ref: String,
+      status: String,
+      page: Number,
+      confidence: Number,
+      bbox: {
+        top: String,
+        left: String,
+        width: String,
+        height: String,
+      },
+    }],
+    extractedText: String,
   },
 });
 

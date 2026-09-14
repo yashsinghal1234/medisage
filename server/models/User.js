@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema({
   },
   bloodGroup: {
     type: String,
+    default: 'O+ Positive',
   },
   allergies: [{
     type: String,
@@ -26,6 +27,11 @@ const userSchema = new mongoose.Schema({
   chronicConditions: [{
     type: String,
   }],
+  emergencyContact: {
+    name: String,
+    relationship: String,
+    phone: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

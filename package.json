@@ -1,18 +1,17 @@
 {
   "name": "medisage",
-  "version": "1.0.0",
-  "description": "Medical Document Management System with AI Analysis",
+  "version": "2.0.0",
+  "description": "MediSage — Clinical Document Management & AI Health Intelligence",
   "main": "server/server.js",
   "scripts": {
     "install-all": "npm install && cd client && npm install",
     "server": "node server/server.js",
-    "client": "cd client && npm start",
+    "client": "cd client && npm run dev",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "build": "cd client && npm run build",
-    "test": "echo \"No tests specified\" && exit 0",
-    "test:api": "node test-api.js"
+    "test": "echo \"No tests specified\" && exit 0"
   },
-  "keywords": ["medical", "document-management", "ai", "langchain", "mern"],
+  "keywords": ["medical", "healthtech", "document-vault", "ai", "clinical-records", "ease-health"],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -22,10 +21,8 @@
     "cors": "^2.8.5",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.2",
-    "langchain": "^0.0.150",
-    "@langchain/openai": "^0.0.10",
+    "multer": "^1.4.5-lts.1",
     "concurrently": "^8.2.1",
-    "axios": "^1.12.0"
+    "axios": "^1.7.9"
   }
 }

@@ -2,6 +2,9 @@ node_modules/
 .env
 uploads/
 client/build
+client/dist
+dist/
+.scannerwork/
 client/node_modules
 *.log
 .DS_Store
