@@ -1,0 +1,104 @@
+name: CI
+
+# Pull requests + every branch push. The backend job boots the real server
+# against a real MongoDB 7 service container and runs the full E2E suite
+# (70 checks) — the same command used locally: `node backend-tests.js`.
+on:
+  push:
+  pull_request:
+    branches: ['main', 'master']
+
+jobs:
+  backend:
+    name: Backend E2E (70 checks, MongoDB mode)
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand( { ping: 1 } )'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://localhost:27017/medisage-ci
+      JWT_SECRET: ci-local-secret-0d8e1f2a4c6b8a9e7f5d3c1b2a4e6f8d
+      FILE_ENCRYPTION_KEY: 8857ffa8a24d763d35d1744ecb9b53fb63c7173ec8df63caa42184300a2c09f5
+      RATE_LIMITS_DISABLED: 'true'
+      ADMIN_SEED_EMAIL: admin@medisage.health
+      ADMIN_SEED_PASSWORD: Adm!nLocal2026
+      SMTP_HOST: ''
+      APP_PUBLIC_URL: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Boot server (waits for Mongo)
+        run: |
+          nohup node server/server.js > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:5000/api/health | grep -q '"database":"mongodb"'; then
+              echo "server ready (mongodb mode)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Server did not reach mongodb mode"
+          cat server.log
+          exit 1
+
+      - name: Run backend E2E suite
+        run: node backend-tests.js
+
+      - name: Dump server log on failure
+        if: failure()
+        run: tail -n 80 server.log
+
+  client:
+    name: Client build (vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        run: npm ci
+
+      - name: Build client
+        run: npm run build
+
+  audit:
+    name: Dependency audit (npm audit)
+    runs-on: ubuntu-latest
+    continue-on-error: true # reporting job; does not gate merges yet
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Server-side audit
+        run: npm audit --audit-level=high
+
+      - name: Client-side audit
+        run: npm audit --audit-level=high
+        working-directory: client
