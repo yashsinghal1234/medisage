@@ -18,7 +18,7 @@ import { documentService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, activeMemberId, isViewingDependent } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState('all');
@@ -52,7 +52,7 @@ export const Dashboard = () => {
 
   useEffect(() => {
     loadDocs();
-  }, [selectedType, searchQuery]);
+  }, [selectedType, searchQuery, activeMemberId]);
 
   const loadDocs = async () => {
     setLoading(true);
@@ -60,6 +60,8 @@ export const Dashboard = () => {
       const data = await documentService.getAll({
         type: selectedType,
         search: searchQuery,
+        // Server-side scoping while a dependent profile is being viewed
+        member: isViewingDependent && activeMemberId ? activeMemberId : undefined,
       });
       setDocuments(data || []);
     } catch (err) {

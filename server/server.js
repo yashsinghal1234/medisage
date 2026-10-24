@@ -17,6 +17,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const https = require('https');
 
 require('dotenv').config();
 const config = require('./config/env');
@@ -107,12 +109,41 @@ app.use(errorHandler);
 // ------------------------------------------------------------------
 // Start + graceful shutdown
 // ------------------------------------------------------------------
-const server = app.listen(config.PORT, () => {
-  console.log(`[START] MediSage v3 Server listening on http://localhost:${config.PORT} (${config.NODE_ENV})`);
-  if (!config.isProd) {
-    console.log('   [DEV] Development mode — resilient local stores & verbose output are enabled.');
+// TLS terminates either at a reverse proxy (recommended in production) or
+// natively: set SSL_CERT_PATH to a PEM or PFX bundle (SSL_KEY_PATH for the
+// separate key file when using plain PEM). PFX bundles may need SSL_KEY path
+// omitted and the password baked via SSL_PFX_PASSPHRASE (dev/self-signed only).
+const sslCertPath = process.env.SSL_CERT_PATH;
+const sslKeyPath = process.env.SSL_KEY_PATH;
+
+let tlsServer = null;
+if (sslCertPath) {
+  const tlsOptions = {};
+  if (/\.pfx$/i.test(sslCertPath)) {
+    tlsOptions.pfx = fs.readFileSync(sslCertPath);
+    if (process.env.SSL_PFX_PASSPHRASE) tlsOptions.passphrase = process.env.SSL_PFX_PASSPHRASE;
+  } else {
+    tlsOptions.cert = fs.readFileSync(sslCertPath);
+    tlsOptions.key = sslKeyPath ? fs.readFileSync(sslKeyPath) : undefined;
   }
+  tlsServer = https.createServer(tlsOptions, app);
+  tlsServer.listen(config.PORT, () => {
+    console.log(`[START] MediSage v3 Server (TLS) listening on https://localhost:${config.PORT} (${config.NODE_ENV})`);
+  });
+} else {
+  tlsServer = http.createServer(app);
+  tlsServer.listen(config.PORT, () => {
+    console.log(`[START] MediSage v3 Server listening on http://localhost:${config.PORT} (${config.NODE_ENV})`);
+  });
+}
+tlsServer.on('error', (err) => {
+  console.error('[FATAL] Server listen error:', err.message);
+  process.exit(1);
 });
+const server = tlsServer;
+if (!config.isProd) {
+  console.log('   [DEV] Development mode — resilient local stores & verbose output are enabled.');
+}
 
 const shutdown = async (signal) => {
   console.log(`\n${signal} received — shutting down gracefully…`);

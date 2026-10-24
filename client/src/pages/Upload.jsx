@@ -73,6 +73,7 @@ const INTAKE_PRESETS = [
 
 export const Upload = () => {
   const navigate = useNavigate();
+  const { user, accountUser, activeMemberId, isViewingDependent } = useAuth();
   const fileInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'presets'
   const [submitting, setSubmitting] = useState(false);
@@ -203,6 +204,13 @@ export const Upload = () => {
 
       if (activePreset?.extractedEntities && activePreset.extractedEntities.length > 0) {
         data.append('extractedEntities', JSON.stringify(activePreset.extractedEntities));
+      }
+
+      // Vault scoping: while a dependent profile is active, the document is
+      // archived under that family member (server validates ownership).
+      const ownerId = accountUser?._id || user?._id;
+      if (isViewingDependent && activeMemberId && activeMemberId !== ownerId && !String(activeMemberId).startsWith('offline-')) {
+        data.append('familyMemberId', activeMemberId);
       }
 
       await documentService.upload(data);

@@ -2,7 +2,8 @@ import axios from 'axios';
 
 const API_BASE = '/api';
 
-const api = axios.create({
+// Shared axios instance (auth context reuses it for the family vault API)
+export const api = axios.create({
   baseURL: API_BASE,
   withCredentials: true, // httpOnly session cookies (medisage_token / medisage_refresh) travel on every request
   headers: {

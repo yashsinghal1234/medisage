@@ -6,20 +6,25 @@ import { BiomarkerTrajectoryDashboard } from '../components/BiomarkerTrajectoryD
 import { DocumentProvenanceViewer } from '../components/DocumentProvenanceViewer';
 import { Search, Check, AlertTriangle, Stethoscope } from 'lucide-react';
 import { documentService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export const Timeline = () => {
+  const { activeMemberId, isViewingDependent } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [provenanceOpen, setProvenanceOpen] = useState(false);
 
   useEffect(() => {
     loadTimeline();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMemberId]);
 
   const loadTimeline = async () => {
     setLoading(true);
     try {
-      const data = await documentService.getAll();
+      const data = await documentService.getAll({
+        member: isViewingDependent && activeMemberId ? activeMemberId : undefined,
+      });
       const sorted = (data || []).sort(
         (a, b) => new Date(b.documentDate || b.uploadDate) - new Date(a.documentDate || a.uploadDate)
       );
