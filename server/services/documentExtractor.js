@@ -20,7 +20,7 @@ const BIOMARKER_PATTERNS = [
   {
     name: 'LDL Cholesterol (Calculated)',
     code: 'LOINC 18262-6',
-    regex: /(?:ldl(?:-c)?|low\s*density\s*lipoprotein)\s*[:\s=]*(\d{2,3}(\.\d+)?)\s*(mg\/dL)?/i,
+    regex: /(?:ldl(?:-c)?(?:\s*cholesterol)?|low\s*density\s*lipoprotein)\s*[:\s=]*(\d{2,3}(\.\d+)?)\s*(mg\/dL)?/i,
     refRange: '< 100 mg/dL',
     unit: 'mg/dL',
     evalStatus: (val) => val > 130 ? 'Elevated' : val > 100 ? 'Borderline' : 'Optimal',
@@ -29,7 +29,7 @@ const BIOMARKER_PATTERNS = [
   {
     name: 'HDL Cholesterol',
     code: 'LOINC 2085-9',
-    regex: /(?:hdl(?:-c)?|high\s*density\s*lipoprotein)\s*[:\s=]*(\d{2,3}(\.\d+)?)\s*(mg\/dL)?/i,
+    regex: /(?:hdl(?:-c)?(?:\s*cholesterol)?|high\s*density\s*lipoprotein)\s*[:\s=]*(\d{2,3}(\.\d+)?)\s*(mg\/dL)?/i,
     refRange: '> 50 mg/dL',
     unit: 'mg/dL',
     evalStatus: (val) => val < 40 ? 'Low' : 'Optimal',
@@ -47,7 +47,7 @@ const BIOMARKER_PATTERNS = [
   {
     name: 'Hemoglobin A1c (HbA1c)',
     code: 'LOINC 17856-6',
-    regex: /(?:hba1c|glycated\s*hemoglobin|a1c)\s*[:\s=]*(\d+(\.\d+)?)\s*(%|percent)?/i,
+    regex: /(?:hba1c|glycated\s*hemoglobin(?:\s*\([^\)]+\))?|a1c)\s*[:\s=]*(\d+(\.\d+)?)\s*(%|percent)?/i,
     refRange: '< 5.7 %',
     unit: '%',
     evalStatus: (val) => val >= 6.5 ? 'Elevated' : val >= 5.7 ? 'Borderline' : 'Optimal',
@@ -107,8 +107,22 @@ const MEDICATION_RULES = [
 async function extractDocumentData(file, textContent = '') {
   let rawText = textContent || '';
 
+  // Client-supplied textContent is authoritative; raw file bytes are only a
+  // fallback (they are often arbitrary content that would shadow parsed text).
+  // If a file was provided in memory, attempt reading text if it's text/json
+  if (file && Buffer.isBuffer(file.buffer) && !file.path && !rawText) {
+    try {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      if (['.txt', '.json', '.csv', '.hl7'].includes(ext)) {
+        rawText = file.buffer.toString('utf8');
+      }
+    } catch (e) {
+      console.warn('Buffer text read failed, using filename heuristic:', e.message);
+    }
+  }
+
   // If a file was saved on disk, attempt reading text if it's text/json
-  if (file && file.path && fs.existsSync(file.path)) {
+  if (file && file.path && fs.existsSync(file.path) && !rawText) {
     try {
       const ext = path.extname(file.originalname).toLowerCase();
       if (['.txt', '.json', '.csv', '.hl7'].includes(ext)) {
@@ -147,7 +161,8 @@ async function extractDocumentData(file, textContent = '') {
     const match = rawText.match(pattern.regex);
     if (match) {
       const valStr = match[1];
-      const numVal = parseFloat(valStr);
+      const cleanNumStr = (valStr || '').replace(/^[><\s]+/, '');
+      const numVal = parseFloat(cleanNumStr);
       let status = 'Optimal';
 
       if (pattern.name.includes('Blood Pressure')) {
@@ -173,8 +188,8 @@ async function extractDocumentData(file, textContent = '') {
           value: entityVal,
           status: status.toLowerCase(),
         });
-      } else if (!isNaN(numVal)) {
-        status = pattern.evalStatus(numVal);
+      } else if (!isNaN(numVal) || pattern.name.includes('eGFR')) {
+        status = pattern.evalStatus(valStr.includes('<') || valStr.includes('>') ? valStr : numVal);
         const entityVal = `${valStr} ${pattern.unit}`;
 
         extractedEntities.push({

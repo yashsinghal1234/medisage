@@ -4,6 +4,7 @@ import { Footer } from '../components/Footer';
 import { PillBadge } from '../components/PillBadge';
 import { BiomarkerTrajectoryDashboard } from '../components/BiomarkerTrajectoryDashboard';
 import { DocumentProvenanceViewer } from '../components/DocumentProvenanceViewer';
+import { Search, Check, AlertTriangle, Stethoscope } from 'lucide-react';
 import { documentService } from '../services/api';
 
 export const Timeline = () => {
@@ -129,7 +130,8 @@ export const Timeline = () => {
               boxShadow: '0 4px 14px rgba(15, 62, 23, 0.18)',
             }}
           >
-            <span>🔍 View Document Provenance</span>
+            <Search size={14} />
+            <span>View Document Provenance</span>
           </button>
         </div>
 
@@ -165,8 +167,9 @@ export const Timeline = () => {
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 300, color: 'var(--color-forest-ink)', marginTop: '4px' }}>
               128/82 mmHg
             </div>
-            <span style={{ fontSize: '12px', color: '#0f3e17', fontWeight: 500 }}>
-              ✓ Controlled on Telmisartan 20mg
+            <span style={{ fontSize: '12px', color: '#0f3e17', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Check size={12} strokeWidth={2.5} />
+              <span>Controlled on Telmisartan 20mg</span>
             </span>
           </div>
 
@@ -184,8 +187,9 @@ export const Timeline = () => {
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 300, color: 'var(--color-forest-ink)', marginTop: '4px' }}>
               5.8%
             </div>
-            <span style={{ fontSize: '12px', color: '#b7791f', fontWeight: 500 }}>
-              ⚠ Pre-metabolic boundary (Review in 90d)
+            <span style={{ fontSize: '12px', color: '#b7791f', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <AlertTriangle size={12} />
+              <span>Pre-metabolic boundary (Review in 90d)</span>
             </span>
           </div>
 
@@ -203,8 +207,9 @@ export const Timeline = () => {
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 300, color: 'var(--color-forest-ink)', marginTop: '4px' }}>
               &gt; 90 mL/min
             </div>
-            <span style={{ fontSize: '12px', color: '#0f3e17', fontWeight: 500 }}>
-              ✓ Optimal renal capacity
+            <span style={{ fontSize: '12px', color: '#0f3e17', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Check size={12} strokeWidth={2.5} />
+              <span>Optimal renal capacity</span>
             </span>
           </div>
         </div>
@@ -260,8 +265,9 @@ export const Timeline = () => {
                       </PillBadge>
                     </div>
 
-                    <span style={{ fontSize: '12px', color: 'var(--color-forest-ink)', fontWeight: 500 }}>
-                      🩺 {item.doctor}
+                    <span style={{ fontSize: '12px', color: 'var(--color-forest-ink)', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Stethoscope size={13} color="var(--color-forest-ink)" />
+                      <span>{item.doctor}</span>
                     </span>
                   </div>
 

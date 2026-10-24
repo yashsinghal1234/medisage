@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Check, Plus, User, Heart, Shield, Sparkles } from 'lucide-react';
+import { Users, Check, Plus, User, Heart, Shield, Sparkles, X, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_FAMILY_PROFILES = [
@@ -173,10 +173,12 @@ export const ProfileSwitcher = ({ isOpen, onClose, onSelectProfile }) => {
               height: '32px',
               cursor: 'pointer',
               color: '#666',
-              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
 
@@ -238,7 +240,9 @@ export const ProfileSwitcher = ({ isOpen, onClose, onSelectProfile }) => {
                     <Check size={14} strokeWidth={3} />
                   </div>
                 ) : (
-                  <div style={{ fontSize: '12px', color: '#0f3e17', fontWeight: 600 }}>Switch →</div>
+                  <div style={{ fontSize: '12px', color: '#0f3e17', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Switch <ArrowRight size={13} />
+                  </div>
                 )}
               </div>
             );

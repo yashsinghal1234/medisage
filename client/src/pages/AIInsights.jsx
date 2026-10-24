@@ -5,7 +5,7 @@ import { PillBadge, PrimaryButton } from '../components/PillBadge';
 import { FeatureCard } from '../components/FeatureCard';
 import { BiomarkerTrajectoryDashboard } from '../components/BiomarkerTrajectoryDashboard';
 import { DocumentProvenanceViewer } from '../components/DocumentProvenanceViewer';
-import { DrugSafetyGuard } from '../components/DrugSafetyGuard';
+import { Search, RefreshCw } from 'lucide-react';
 import { aiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -141,7 +141,8 @@ export const AIInsights = () => {
                 boxShadow: '0 4px 14px rgba(15, 62, 23, 0.18)',
               }}
             >
-              <span>🔍 View Document Provenance</span>
+              <Search size={14} />
+              <span>View Document Provenance</span>
             </button>
 
             <button
@@ -160,7 +161,8 @@ export const AIInsights = () => {
                 gap: '6px',
               }}
             >
-              🔄 Re-run Clinical AI Analysis
+              <RefreshCw size={14} />
+              <span>Re-run Clinical AI Analysis</span>
             </button>
           </div>
         </div>
@@ -315,7 +317,7 @@ export const AIInsights = () => {
                           textTransform: 'uppercase',
                         }}
                       >
-                        🌿 MediSage AI
+                        MediSage AI
                       </span>
                     )}
                     {msg.content}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
 import { DashboardNavbar } from '../components/DashboardNavbar';
 import { Footer } from '../components/Footer';
 import { PillBadge, PrimaryButton } from '../components/PillBadge';
@@ -84,7 +85,7 @@ export const Insurance = () => {
                   flexShrink: 0,
                 }}
               >
-                🌿
+                <Sparkles size={16} />
               </div>
               <div>
                 <span className="eyebrow-label" style={{ marginBottom: '4px' }}>

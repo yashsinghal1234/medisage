@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { ProfileSwitcher } from './ProfileSwitcher';
 import { FhirPassportModal } from './FhirPassportModal';
+import { Logo } from './Logo';
 
 export const DashboardNavbar = ({ onOpenEmergencyModal, onOpenPassportModal }) => {
   const { user, logout } = useAuth();
@@ -78,64 +79,11 @@ export const DashboardNavbar = ({ onOpenEmergencyModal, onOpenPassportModal }) =
           boxSizing: 'border-box',
         }}
       >
-        {/* ================= LEFT: ONLY MEDISAGE LOGO & STATUS ================= */}
+        {/* ================= LEFT: ONLY MEDICLE MD LOGO & STATUS ================= */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Link
-            to="/dashboard"
-            onMouseEnter={closeDropdownImmediately}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              textDecoration: 'none',
-            }}
-          >
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '11px',
-                backgroundColor: '#0f3e17',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '5px',
-              }}
-            >
-              <svg
-                viewBox="0 0 100 100"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ width: '100%', height: '100%' }}
-              >
-                <path
-                  d="M15 50 C 15 25, 45 15, 85 20 C 85 55, 55 85, 15 80 Z"
-                  fill="#fffefc"
-                  opacity="0.95"
-                />
-                <path
-                  d="M30 65 C 40 45, 60 35, 80 32"
-                  stroke="#0f3e17"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-
-            <span
-              style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: '34px',
-                fontWeight: 400,
-                color: '#0f3e17',
-                letterSpacing: '-0.03em',
-                lineHeight: 1,
-                marginTop: '-2px',
-              }}
-            >
-              medisage
-            </span>
-          </Link>
+          <div onMouseEnter={closeDropdownImmediately} style={{ display: 'flex', alignItems: 'center' }}>
+            <Logo size={25} fontSize="22px" color="#000000" to="/dashboard" />
+          </div>
 
           {/* Minimal live vault active pill */}
           <div

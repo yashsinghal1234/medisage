@@ -5,6 +5,7 @@ const documentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+    index: true,
   },
   title: {
     type: String,
@@ -22,12 +23,22 @@ const documentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // Relative storage location inside the encrypted vault; optional because
+  // documents may exist as metadata-only records (no physical file attached)
   filePath: {
     type: String,
-    required: true,
   },
   fileSize: {
     type: Number,
+  },
+  fileKey: {
+    type: String,
+    default: '',
+  },
+  familyMemberId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'FamilyMember',
+    default: null,
   },
   uploadDate: {
     type: Date,

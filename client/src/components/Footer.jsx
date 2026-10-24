@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Logo } from './Logo';
 
 export const Footer = () => {
   const productsLinks = [
@@ -379,27 +380,7 @@ export const Footer = () => {
 
               {/* Bottom Row: App Icon Mark */}
               <div style={{ paddingTop: '32px' }}>
-                <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    backgroundColor: '#0d3516',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 8px rgba(13, 53, 22, 0.2)',
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M3 18 C8 18, 11 6, 21 6"
-                      stroke="#ffffff"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
+                <Logo size={26} color="#0f3e17" to="/" />
               </div>
             </div>
           </div>

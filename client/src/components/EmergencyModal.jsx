@@ -372,7 +372,7 @@ export const EmergencyModal = ({ user, isOpen, onClose }) => {
                       gap: '6px',
                     }}
                   >
-                    <span>⚠️</span>
+                    <AlertOctagon size={13} color="#ffffff" />
                     <span>{allergy}</span>
                   </div>
                 ))}
@@ -411,9 +411,13 @@ export const EmergencyModal = ({ user, isOpen, onClose }) => {
                         borderRadius: '6px',
                         border: '1px solid #e1efe4',
                         fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
                       }}
                     >
-                      💊 {med}
+                      <Pill size={12} color="#166534" />
+                      <span>{med}</span>
                     </div>
                   ))}
                 </div>
@@ -446,9 +450,13 @@ export const EmergencyModal = ({ user, isOpen, onClose }) => {
                         borderRadius: '6px',
                         border: '1px solid #cbd5e1',
                         fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
                       }}
                     >
-                      🩺 {cond}
+                      <Stethoscope size={12} color="#1e3a8a" />
+                      <span>{cond}</span>
                     </div>
                   ))}
                 </div>
@@ -568,8 +576,9 @@ export const EmergencyModal = ({ user, isOpen, onClose }) => {
                   <span style={{ fontSize: '9px', textTransform: 'uppercase', opacity: 0.75, display: 'block' }}>
                     ALLERGIES
                   </span>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#fee2e2' }}>
-                    ⚠️ {allergies[0]}
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#fee2e2', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <AlertOctagon size={11} color="#fee2e2" />
+                    <span>{allergies[0]}</span>
                   </span>
                 </div>
               </div>

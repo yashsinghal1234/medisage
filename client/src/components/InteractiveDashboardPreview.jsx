@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
 import gsap from 'gsap';
 
 export const InteractiveDashboardPreview = () => {
@@ -378,7 +379,7 @@ export const InteractiveDashboardPreview = () => {
                 }}
               >
                 <span>Individual therapy</span>
-                <span style={{ fontSize: '10px', color: '#666' }}>⌵</span>
+                <ChevronDown size={12} color="#666" />
               </div>
 
               {/* Live Animated Typing Note Box */}

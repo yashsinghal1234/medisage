@@ -217,8 +217,9 @@ export const DrugSafetyGuard = () => {
             <span>CRITICAL ALLERGY CONTRAINDICATION DETECTED</span>
           </div>
           {allergyAlerts.map((alert, idx) => (
-            <div key={idx} style={{ fontSize: '13px', color: '#7f1d1d', lineHeight: 1.45 }}>
-              ⚠️ Drug <strong>{alert.med}</strong> is directly contraindicated due to documented <strong>{alert.allergen}</strong> ({alert.severity}). Desensitization or alternative class required immediately.
+            <div key={idx} style={{ fontSize: '13px', color: '#7f1d1d', lineHeight: 1.45, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle size={14} color="#b91c1c" style={{ flexShrink: 0 }} />
+              <span>Drug <strong>{alert.med}</strong> is directly contraindicated due to documented <strong>{alert.allergen}</strong> ({alert.severity}). Desensitization or alternative class required immediately.</span>
             </div>
           ))}
         </div>

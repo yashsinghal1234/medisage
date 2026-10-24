@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { ArrowRight } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -377,9 +378,12 @@ export const EhrShowcaseSection = () => {
                     color: '#0f3e17',
                     fontWeight: 600,
                     cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
                   }}
                 >
-                  Edit SOAP Template →
+                  Edit SOAP Template <ArrowRight size={13} />
                 </span>
               </div>
             </div>

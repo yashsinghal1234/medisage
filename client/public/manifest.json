@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "MediSage",
+  "name": "MediSage — Clinical Health Vault & AI Health Intelligence",
   "icons": [
     {
       "src": "favicon.ico",

@@ -10,21 +10,67 @@ import { AIInsights } from './pages/AIInsights';
 import { Insurance } from './pages/Insurance';
 import { Timeline } from './pages/Timeline';
 import { Profile } from './pages/Profile';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 export function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/upload" element={<Upload />} />
-          <Route path="/ai-insights" element={<AIInsights />} />
-          <Route path="/insurance" element={<Insurance />} />
-          <Route path="/timeline" element={<Timeline />} />
-          <Route path="/profile" element={<Profile />} />
+
+          {/* Protected Health Vault Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute>
+                <Upload />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-insights"
+            element={
+              <ProtectedRoute>
+                <AIInsights />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/insurance"
+            element={
+              <ProtectedRoute>
+                <Insurance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/timeline"
+            element={
+              <ProtectedRoute>
+                <Timeline />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

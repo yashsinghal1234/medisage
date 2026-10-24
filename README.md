@@ -279,7 +279,13 @@ Medisage/
 | Method | Endpoint | Description | Auth Required | Request Body / Params |
 | :--- | :--- | :--- | :---: | :--- |
 | `POST` | `/api/auth/register` | Register new patient profile | No | `{ name, email, password, dateOfBirth, bloodGroup, allergies[], chronicConditions[], emergencyContact }` |
-| `POST` | `/api/auth/login` | Authenticate user & receive JWT | No | `{ email, password }` |
+| `POST` | `/api/auth/login` | Authenticate user & receive JWT + refresh token | No | `{ email, password }` |
+| `POST` | `/api/auth/google` | Google Sign-In (One Tap ID token, server-verified) | No | `{ credential }` |
+| `POST` | `/api/auth/refresh` | Rotate tokens | No | `{ refreshToken }` |
+| `POST` | `/api/auth/logout` | Revoke sessions | Yes (JWT) | `{ refreshToken? }` |
+| `POST` | `/api/auth/forgot-password` | Issue reset token (logged to server console) | No | `{ email }` |
+| `POST` | `/api/auth/reset-password` | Complete password reset | No | `{ token, password }` |
+| `PUT` | `/api/auth/change-password` | Change password (invalidates old tokens) | Yes (JWT) | `{ currentPassword, newPassword }` |
 | `GET` | `/api/auth/profile` | Retrieve active patient profile | Yes (JWT) | *None* |
 | `PUT` | `/api/auth/profile` | Update profile vitals & emergency contact | Yes (JWT) | `{ name, dateOfBirth, bloodGroup, allergies[], chronicConditions[], emergencyContact }` |
 
@@ -287,19 +293,48 @@ Medisage/
 
 | Method | Endpoint | Description | Auth Required | Request Body / Params |
 | :--- | :--- | :--- | :---: | :--- |
-| `POST` | `/api/documents/extract` | Autonomous OCR & Entity Extraction | No | `multipart/form-data` with `file` OR `{ textContent }` |
+| `POST` | `/api/documents/extract` | Autonomous OCR & Entity Extraction | Yes (JWT) | `multipart/form-data` with `file` OR `{ textContent }` |
 | `POST` | `/api/documents/upload` | Upload & index document in vault | Yes (JWT) | `multipart/form-data` with `file`, `title`, `documentType`, `doctor`, `hospital`, `diagnosis`, `tags`, `medications` |
-| `GET` | `/api/documents` | List user documents (supports filters) | Yes (JWT) | Query params: `?type=prescription&search=cholesterol` |
+| `GET` | `/api/documents` | List user documents (filters + pagination via `X-Total-Count` headers) | Yes (JWT) | Query params: `?type=prescription&search=cholesterol&page=1&limit=50&member=<familyId>` |
 | `GET` | `/api/documents/:id` | Fetch specific document metadata | Yes (JWT) | URL Param: `id` |
+| `GET` | `/api/documents/:id/file` | Authenticated file stream / download (`?download=true`) | Yes (JWT) | URL Param: `id` |
+| `PATCH` | `/api/documents/:id` | Update document metadata (correct extractions) | Yes (JWT) | `{ title?, documentType?, description?, documentDate?, tags?, metadata? }` |
 | `DELETE`| `/api/documents/:id` | Delete document & unlink local file | Yes (JWT) | URL Param: `id` |
 
 ### 3. AI & Clinical Intelligence Endpoints (`/api/ai`)
 
 | Method | Endpoint | Description | Auth Required | Request Body / Params |
 | :--- | :--- | :--- | :---: | :--- |
-| `POST` | `/api/ai/analyze-history` | Generate longitudinal synthesis & guidance | Optional | `{ age, bloodGroup, allergies[], chronicConditions[] }` |
-| `POST` | `/api/ai/recommend-insurance` | Match health plans to risk profile | Optional | `{ age, chronicConditions[], allergies[] }` |
-| `POST` | `/api/ai/chat` | Interactive clinical companion chat | Optional | `{ messages: [{ role: 'user', content: '...' }] }` |
+| `POST` | `/api/ai/analyze-history` | Generate longitudinal synthesis from the real vault | Yes (JWT) | `{}` (optionally `{ age, allergies[], chronicConditions[] }` overrides) |
+| `POST` | `/api/ai/recommend-insurance` | Match health plans to the real risk profile | Yes (JWT) | `{ age?, chronicConditions?, allergies? }` |
+| `POST` | `/api/ai/chat` | Interactive clinical companion (real user context) | Yes (JWT) | `{ messages: [{ role: 'user', content: '...' }] }` |
+
+### 4. Pharmacovigilance & Clinical Safety (`/api/clinical`)
+
+| Method | Endpoint | Description | Auth Required | Request Body / Params |
+| :--- | :--- | :--- | :---: | :--- |
+| `POST` | `/api/clinical/interactions` | Evaluate a medication list against the interaction knowledge base | Yes (JWT) | `{ medications[], allergies?, egfr?, age? }` |
+| `POST` | `/api/clinical/sandbox` | Sandbox Simulator — prospective meds before ingestion | Yes (JWT) | `{ medications[], allergies?, egfr?, age? }` |
+| `GET` | `/api/clinical/profile-scan` | Scan parsed medications out of uploaded prescriptions | Yes (JWT) | *None* |
+
+Severity-ranked alerts (`critical|high|moderate|low`) cite `mechanism`, `effect` and `advice`, backed by a CYP450 / renal / allergy-cross-reactivity knowledge base (`server/data/interactions.js`).
+
+### 5. Family & Dependent Vault (`/api/family`)
+
+| Method | Endpoint | Description | Auth Required | Request Body / Params |
+| :--- | :--- | :--- | :---: | :--- |
+| `GET` | `/api/family` | List dependents in the household vault | Yes (JWT) | *None* |
+| `POST` | `/api/family` | Add a dependent | Yes (JWT) | `{ name, relationship, dateOfBirth?, bloodGroup?, allergies?, chronicConditions?, emergencyContact? }` |
+| `PUT` | `/api/family/:id` | Update a dependent | Yes (JWT) | Partial fields |
+| `DELETE` | `/api/family/:id` | Remove a dependent | Yes (JWT) | URL Param: `id` |
+
+### 6. HL7 FHIR R4 Export & Dashboard (`/api/fhir`, `/api/dashboard`)
+
+| Method | Endpoint | Description | Auth Required | Request Body / Params |
+| :--- | :--- | :--- | :---: | :--- |
+| `GET` | `/api/fhir/bundle` | HL7 FHIR R4 document Bundle (`application/fhir+json`) | Yes (JWT) | `?member=<familyId>` for a dependent |
+| `GET` | `/api/dashboard/stats` | Vault overview (counts, latest biomarkers, recents) | Yes (JWT) | *None* |
+| `GET` | `/api/dashboard/trends` | Longitudinal biomarker series for charts | Yes (JWT) | `?range=1m|6m|1y|all` |
 
 ---
 

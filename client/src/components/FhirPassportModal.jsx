@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   FileCode, Download, Printer, CheckCircle2, ShieldCheck, 
-  X, Copy, Check, Hospital, User, Calendar, ExternalLink, QrCode, FileText
+  X, Copy, Check, Hospital, User, Calendar, ExternalLink, QrCode, FileText, AlertTriangle
 } from 'lucide-react';
 
 export const FhirPassportModal = ({ user, isOpen, onClose }) => {
@@ -396,8 +396,14 @@ export const FhirPassportModal = ({ user, isOpen, onClose }) => {
                     <span style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', color: '#991b1b', display: 'block', marginBottom: '4px' }}>
                       ALLERGY &amp; CONTRAINDICATION
                     </span>
-                    <div style={{ fontSize: '12px', color: '#7f1d1d', fontWeight: 600 }}>⚠️ Penicillin (Severe Anaphylaxis)</div>
-                    <div style={{ fontSize: '12px', color: '#7f1d1d' }}>⚠️ Sulfonamide Derivatives</div>
+                    <div style={{ fontSize: '12px', color: '#7f1d1d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <AlertTriangle size={12} color="#b91c1c" />
+                      <span>Penicillin (Severe Anaphylaxis)</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#7f1d1d', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
+                      <AlertTriangle size={12} color="#b91c1c" />
+                      <span>Sulfonamide Derivatives</span>
+                    </div>
                   </div>
                 </div>
               </div>

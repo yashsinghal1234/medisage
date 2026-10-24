@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   FileText, Activity, Pill, Eye, LayoutGrid, List, 
-  Search, ShieldCheck, Download, Trash2, ArrowRight, Sparkles, ChevronRight, Stethoscope
+  Search, ShieldCheck, Download, Trash2, ArrowRight, Sparkles, ChevronRight, Stethoscope,
+  X, ShieldAlert, ArrowUpRight, Check
 } from 'lucide-react';
 import { DashboardNavbar } from '../components/DashboardNavbar';
 import { Footer } from '../components/Footer';
@@ -12,6 +13,7 @@ import { DocumentProvenanceViewer } from '../components/DocumentProvenanceViewer
 import { FhirPassportModal } from '../components/FhirPassportModal';
 import { ProfileSwitcher } from '../components/ProfileSwitcher';
 import { ClinicalSurveillanceReminders } from '../components/ClinicalSurveillanceReminders';
+import { OnboardingModal } from '../components/OnboardingModal';
 import { documentService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -26,6 +28,7 @@ export const Dashboard = () => {
   const [showProvenanceModal, setShowProvenanceModal] = useState(false);
   const [showPassportModal, setShowPassportModal] = useState(false);
   const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [activeDocDetail, setActiveDocDetail] = useState(null);
 
   const filterTabs = [
@@ -35,6 +38,17 @@ export const Dashboard = () => {
     { id: 'scan', label: 'Radiology Scans' },
     { id: 'discharge-summary', label: 'Discharge Summaries' },
   ];
+
+  useEffect(() => {
+    if (user) {
+      const isAlreadyOnboarded =
+        user.onboarded === true ||
+        localStorage.getItem(`medisage_onboarded_${user._id}`) === 'true';
+      if (!isAlreadyOnboarded) {
+        setShowOnboardingModal(true);
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     loadDocs();
@@ -120,7 +134,7 @@ export const Dashboard = () => {
                 backgroundColor: '#991b1b',
                 color: '#ffffff',
                 border: 'none',
-                padding: '13px 18px',
+                padding: '13px 20px',
                 borderRadius: 'var(--radius-badges)',
                 fontSize: '13.5px',
                 fontWeight: 600,
@@ -134,7 +148,8 @@ export const Dashboard = () => {
               onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
               onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
             >
-              <span>🚨 1-Click ICE Pass</span>
+              <ShieldAlert size={16} />
+              <span>1-Click ICE Pass</span>
             </button>
             <button
               onClick={() => setShowPassportModal(true)}
@@ -153,7 +168,8 @@ export const Dashboard = () => {
                 boxShadow: '0 2px 8px rgba(15, 62, 23, 0.08)',
               }}
             >
-              <span>📑 Medical Passport (FHIR)</span>
+              <FileText size={16} />
+              <span>Medical Passport (FHIR)</span>
             </button>
             <button
               onClick={() => setShowProvenanceModal(true)}
@@ -171,7 +187,8 @@ export const Dashboard = () => {
                 gap: '8px',
               }}
             >
-              <span>🔍 Provenance Viewer</span>
+              <Search size={16} />
+              <span>Provenance Viewer</span>
             </button>
           </div>
         </div>
@@ -504,8 +521,9 @@ export const Dashboard = () => {
                         </h4>
 
                         {/* Clinician line */}
-                        <div style={{ fontSize: '12px', color: '#666', marginBottom: '14px' }}>
-                          🩺 {doc.metadata?.doctor || 'Attending Physician'} • {doc.metadata?.hospital || 'Clinical Diagnostic Center'}
+                        <div style={{ fontSize: '12px', color: '#666', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <Stethoscope size={13} color="#2d6a38" />
+                          <span>{doc.metadata?.doctor || 'Attending Physician'} • {doc.metadata?.hospital || 'Clinical Diagnostic Center'}</span>
                         </div>
 
                         {/* VISUAL HIGHLIGHTS: Key Biomarker Pills or Medication Badges (NO WALL OF TEXT!) */}
@@ -531,7 +549,9 @@ export const Dashboard = () => {
                                 >
                                   <span>{b.name}:</span>
                                   <strong>{b.value}</strong>
-                                  <span style={{ fontSize: '9px', opacity: 0.85 }}>{isBad ? '▲' : '●'}</span>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', opacity: 0.9 }}>
+                                    {isBad ? <ArrowUpRight size={11} strokeWidth={2.5} /> : <Check size={11} strokeWidth={2.5} />}
+                                  </span>
                                 </div>
                               );
                             })}
@@ -549,9 +569,13 @@ export const Dashboard = () => {
                                   fontSize: '11.5px',
                                   color: '#166534',
                                   fontWeight: 600,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
                                 }}
                               >
-                                💊 {m}
+                                <Pill size={11} />
+                                <span>{m}</span>
                               </div>
                             ))}
                           </div>
@@ -689,8 +713,9 @@ export const Dashboard = () => {
                                 {doc.metadata.biomarkers.map(b => `${b.name} ${b.value}`).slice(0, 2).join(' • ')}
                               </span>
                             ) : doc.metadata?.medications ? (
-                              <span style={{ fontSize: '12px', color: '#166534', fontWeight: 600 }}>
-                                💊 {doc.metadata.medications.slice(0, 2).join(', ')}
+                              <span style={{ fontSize: '12px', color: '#166534', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <Pill size={11} />
+                                <span>{doc.metadata.medications.slice(0, 2).join(', ')}</span>
                               </span>
                             ) : (
                               <span style={{ fontSize: '12px', color: '#666' }}>Verified</span>
@@ -763,9 +788,10 @@ export const Dashboard = () => {
 
                 <button
                   onClick={() => setActiveDocDetail(null)}
-                  style={{ background: 'none', border: 'none', fontSize: '16px', color: '#666', cursor: 'pointer', padding: '4px' }}
+                  style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title="Close panel"
                 >
-                  ✕
+                  <X size={16} />
                 </button>
               </div>
 
@@ -863,9 +889,13 @@ export const Dashboard = () => {
                           fontWeight: 600,
                           padding: '4px 8px',
                           borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
                         }}
                       >
-                        💊 {m}
+                        <Pill size={11} />
+                        <span>{m}</span>
                       </span>
                     ))}
                   </div>
@@ -941,6 +971,12 @@ export const Dashboard = () => {
       <ProfileSwitcher
         isOpen={showProfileSwitcher}
         onClose={() => setShowProfileSwitcher(false)}
+      />
+
+      <OnboardingModal
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        onComplete={() => setShowOnboardingModal(false)}
       />
 
       <Footer />

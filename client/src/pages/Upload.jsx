@@ -336,8 +336,9 @@ export const Upload = () => {
 
             {file ? (
               <div>
-                <div style={{ fontSize: '17px', fontWeight: 600, color: '#0f3e17', marginBottom: '4px' }}>
-                  ✓ {file.name}
+                <div style={{ fontSize: '17px', fontWeight: 600, color: '#0f3e17', marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <Check size={16} strokeWidth={2.5} />
+                  <span>{file.name}</span>
                 </div>
                 <div style={{ fontSize: '12.5px', color: '#666' }}>
                   {(file.size / 1024).toFixed(1)} KB • Click or drag another file to replace
@@ -607,8 +608,9 @@ export const Upload = () => {
                     Extracted Biomarkers &amp; Entities ({activePreset.extractedEntities.length})
                   </span>
                 </div>
-                <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600 }}>
-                  ✓ 100% Provenance Linked
+                <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Check size={11} strokeWidth={2.5} />
+                  <span>100% Provenance Linked</span>
                 </span>
               </div>
 
@@ -679,8 +681,9 @@ export const Upload = () => {
                 marginTop: '14px',
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#0f3e17', textTransform: 'uppercase', marginBottom: '2px' }}>
-                ✓ Provenance Verified &amp; Index Ready
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#0f3e17', textTransform: 'uppercase', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Check size={12} strokeWidth={2.5} />
+                <span>Provenance Verified &amp; Index Ready</span>
               </div>
               <div style={{ fontSize: '11.5px', color: '#444' }}>
                 Extracted data automatically maps into your <strong>Biomarker Forecaster</strong> and <strong>Drug Safety Guard</strong> upon deposit.
@@ -878,7 +881,8 @@ export const Upload = () => {
               onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
             >
               <ShieldCheck size={16} />
-              <span>{submitting ? 'Encrypting & Depositing...' : 'Deposit Verified Record into Sovereign Vault →'}</span>
+              <span>{submitting ? 'Encrypting & Depositing...' : 'Deposit Verified Record into Sovereign Vault'}</span>
+              {!submitting && <ArrowRight size={15} />}
             </button>
           </div>
         </form>

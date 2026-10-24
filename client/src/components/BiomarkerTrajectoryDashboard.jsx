@@ -647,7 +647,13 @@ export const BiomarkerTrajectoryDashboard = () => {
                 cursor: 'pointer',
               }}
             >
-              {simulationActive ? 'Simulation On ✓' : 'Preview Simulation'}
+              {simulationActive ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  Simulation On <CheckCircle2 size={12} strokeWidth={2.5} />
+                </span>
+              ) : (
+                'Preview Simulation'
+              )}
             </button>
           </div>
 

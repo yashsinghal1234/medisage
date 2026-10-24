@@ -137,10 +137,12 @@ h3 {
   line-height: var(--leading-heading-sm);
 }
 
-p {
+p, .para-text, .editorial-para {
+  font-family: 'Newsreader', 'Cormorant Garamond', Georgia, Cambria, serif;
+  font-size: 15.5px;
+  line-height: 1.6;
   color: var(--color-charcoal);
-  font-size: var(--text-body);
-  line-height: var(--leading-body);
+  letter-spacing: 0.005em;
 }
 
 a {

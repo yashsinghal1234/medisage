@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import gsap from 'gsap';
 import { useAuth } from '../context/AuthContext';
+import { Logo } from './Logo';
 
 export const Navbar = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const headerRef = useRef(null);
   const buttonRef = useRef(null);
 
@@ -128,63 +130,10 @@ export const Navbar = () => {
           justifyContent: 'space-between',
         }}
       >
-        {/* Brand Logo: Green Rounded Square + 'ease' wordmark */}
-        <Link
-          to="/"
-          onMouseEnter={closeDropdownImmediately}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            textDecoration: 'none',
-          }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '13px',
-              backgroundColor: '#0f3e17',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-            }}
-          >
-            <svg
-              viewBox="0 0 100 100"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ width: '100%', height: '100%' }}
-            >
-              <path
-                d="M15 50 C 15 25, 45 15, 85 20 C 85 55, 55 85, 15 80 Z"
-                fill="#fffefc"
-                opacity="0.95"
-              />
-              <path
-                d="M30 65 C 40 45, 60 35, 80 32"
-                stroke="#0f3e17"
-                strokeWidth="8"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-
-          <span
-            style={{
-              fontFamily: "'Playfair Display', 'Newsreader', 'Cormorant Garamond', serif",
-              fontSize: '44px',
-              fontWeight: 400,
-              color: '#0f3e17',
-              letterSpacing: '-0.03em',
-              lineHeight: 1,
-              marginTop: '-4px',
-            }}
-          >
-            medisage
-          </span>
-        </Link>
+        {/* Brand Logo: Medicle MD */}
+        <div onMouseEnter={closeDropdownImmediately} style={{ display: 'flex', alignItems: 'center' }}>
+          <Logo size={27} fontSize="24px" color="#000000" to="/" />
+        </div>
 
         {/* Center Navigation Links */}
         <nav
@@ -323,51 +272,117 @@ export const Navbar = () => {
         </nav>
 
         {/* Right CTA Action: closes dropdown immediately on hover */}
-        <div onMouseEnter={closeDropdownImmediately}>
+        <div onMouseEnter={closeDropdownImmediately} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {isAuthenticated ? (
-            <Link
-              to="/dashboard"
-              style={{
-                backgroundColor: '#0f3e17',
-                color: '#fffefc',
-                fontFamily: 'var(--font-suisse-intl)',
-                fontSize: '14px',
-                fontWeight: 500,
-                padding: '11px 26px',
-                borderRadius: '999px',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-              }}
-            >
-              <span>My Vault</span>
-              <span>→</span>
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '5px 12px 5px 6px',
+                  borderRadius: '999px',
+                  backgroundColor: '#edf6ee',
+                  border: '1px solid #d4e7d7',
+                }}
+              >
+                <div
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    backgroundColor: '#0f3e17',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                  }}
+                >
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#0f3e17' }}>
+                  {user?.name ? user.name.split(' ')[0] : 'Patient'}
+                </span>
+              </div>
+
+              <Link
+                to="/dashboard"
+                style={{
+                  backgroundColor: '#0f3e17',
+                  color: '#fffefc',
+                  fontFamily: 'var(--font-suisse-intl)',
+                  fontSize: '13.5px',
+                  fontWeight: 500,
+                  padding: '9px 20px',
+                  borderRadius: '999px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 10px rgba(15, 62, 23, 0.15)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#164d23')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#0f3e17')}
+              >
+                <span>My Vault</span>
+                <ArrowRight size={13} />
+              </Link>
+            </div>
           ) : (
-            <Link
-              ref={buttonRef}
-              to="/register"
-              onMouseEnter={handleButtonMouseEnter}
-              onMouseLeave={handleButtonMouseLeave}
-              style={{
-                backgroundColor: '#0f3e17',
-                color: '#fffefc',
-                fontFamily: 'var(--font-suisse-intl)',
-                fontSize: '14px',
-                fontWeight: 500,
-                padding: '11px 26px',
-                borderRadius: '999px',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(15, 62, 23, 0.16)',
-              }}
-            >
-              Create Vault
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Link
+                to="/login"
+                style={{
+                  color: '#0f3e17',
+                  fontSize: '13.5px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '999px',
+                  border: '1.5px solid rgba(15, 62, 23, 0.25)',
+                  backgroundColor: 'transparent',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#eef5f0';
+                  e.currentTarget.style.borderColor = '#0f3e17';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.borderColor = 'rgba(15, 62, 23, 0.25)';
+                }}
+              >
+                Sign In
+              </Link>
+
+              <Link
+                ref={buttonRef}
+                to="/register"
+                onMouseEnter={handleButtonMouseEnter}
+                onMouseLeave={handleButtonMouseLeave}
+                style={{
+                  backgroundColor: '#0f3e17',
+                  color: '#fffefc',
+                  fontFamily: 'var(--font-suisse-intl)',
+                  fontSize: '13.5px',
+                  fontWeight: 500,
+                  padding: '9px 20px',
+                  borderRadius: '999px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(15, 62, 23, 0.16)',
+                }}
+              >
+                Create Vault
+              </Link>
+            </div>
           )}
         </div>
       </div>

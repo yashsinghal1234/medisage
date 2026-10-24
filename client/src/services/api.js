@@ -215,7 +215,7 @@ export const aiService = {
       // Intelligent botanical clinical synthesis fallback
     }
     return {
-      analysis: `### 🌿 Comprehensive Health Synthesis & Longitudinal Assessment
+      analysis: `### Comprehensive Health Synthesis & Longitudinal Assessment
 
 **1. Clinical Overview**
 Based on your consolidated medical records (Metabolic Panel, Cardiology Consultation, and Imaging), your cardiovascular biomarkers demonstrate stable function with early indicators of mild dyslipidemia (LDL 138 mg/dL) and pre-metabolic insulin resistance (HbA1c 5.8%). Your resting hemodynamics (BP 128/82 mmHg) reflect well-managed Stage-1 readings on single-agent Telmisartan therapy.
@@ -334,26 +334,11 @@ export const authService = {
         localStorage.setItem('medisage_user', JSON.stringify(res.data.user));
         return res.data;
       }
-    } catch {
-      // Fallback demo login
+      throw new Error(res.data?.error || 'Authentication failed');
+    } catch (err) {
+      const errMsg = err.response?.data?.error || err.message || 'Login failed. Please check your credentials.';
+      throw new Error(errMsg);
     }
-    const demoUser = {
-      _id: 'user-demo-1',
-      name: 'Eleanor Vance',
-      email: email || 'eleanor.vance@medisage.health',
-      bloodGroup: 'O+ Positive',
-      dateOfBirth: '1988-06-14',
-      allergies: ['Penicillin', 'Sulfonamides'],
-      chronicConditions: ['Stage-1 Hypertension (Controlled)', 'Mild Dyslipidemia'],
-      emergencyContact: {
-        name: 'Julian Vance',
-        relationship: 'Spouse',
-        phone: '+1 (555) 438-9921'
-      }
-    };
-    localStorage.setItem('medisage_token', 'demo-jwt-token-botanical-2026');
-    localStorage.setItem('medisage_user', JSON.stringify(demoUser));
-    return { token: 'demo-jwt-token-botanical-2026', user: demoUser };
   },
 
   async register(data) {
@@ -364,22 +349,79 @@ export const authService = {
         localStorage.setItem('medisage_user', JSON.stringify(res.data.user));
         return res.data;
       }
-    } catch {
-      // Fallback
+      throw new Error(res.data?.error || 'Registration failed');
+    } catch (err) {
+      const errMsg = err.response?.data?.error || err.message || 'Registration failed. Please check your details.';
+      throw new Error(errMsg);
     }
-    const newUser = {
-      _id: 'user-' + Date.now(),
-      name: data.name || 'Patient User',
-      email: data.email,
-      bloodGroup: data.bloodGroup || 'A+',
-      dateOfBirth: data.dateOfBirth || '1992-04-10',
-      allergies: data.allergies || [],
-      chronicConditions: data.chronicConditions || [],
-      emergencyContact: data.emergencyContact || { name: 'Emergency Contact', phone: '+1 555-0199', relationship: 'Family' }
+  },
+
+  async googleAuth(googleData) {
+    try {
+      const res = await api.post('/auth/google', googleData);
+      if (res.data && res.data.token) {
+        localStorage.setItem('medisage_token', res.data.token);
+        localStorage.setItem('medisage_user', JSON.stringify(res.data.user));
+        return res.data;
+      }
+      throw new Error(res.data?.error || 'Google authentication failed');
+    } catch (err) {
+      console.warn('Google backend auth notice:', err);
+      // If server returned a distinct client error, throw it
+      if (err.response?.data?.error) {
+        throw new Error(err.response.data.error);
+      }
+      // Resilient local fallback for offline/disconnected demo mode
+      const email = googleData.email || 'dr.google.user@gmail.com';
+      const fallbackUser = {
+        _id: 'user-google-' + Date.now(),
+        name: googleData.name || email.split('@')[0],
+        email: email,
+        role: 'patient',
+        avatar: googleData.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
+        bloodGroup: 'O+ Positive',
+        allergies: [],
+        chronicConditions: [],
+        emergencyContact: { name: 'Emergency Contact', relationship: 'Family', phone: '' },
+        onboarded: false,
+      };
+      const token = 'google-oauth-jwt-token-' + Date.now();
+      localStorage.setItem('medisage_token', token);
+      localStorage.setItem('medisage_user', JSON.stringify(fallbackUser));
+      return { token, user: fallbackUser };
+    }
+  },
+
+  async loginDemo() {
+    try {
+      const res = await api.post('/auth/demo');
+      if (res.data && res.data.token) {
+        localStorage.setItem('medisage_token', res.data.token);
+        localStorage.setItem('medisage_user', JSON.stringify(res.data.user));
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Backend demo endpoint fallback:', err);
+    }
+    const demoUser = {
+      _id: 'user-demo-1',
+      name: 'Eleanor Vance',
+      email: 'eleanor.vance@medisage.health',
+      bloodGroup: 'O+ Positive',
+      role: 'patient',
+      dateOfBirth: '1988-06-14',
+      allergies: ['Penicillin', 'Sulfonamides'],
+      chronicConditions: ['Stage-1 Hypertension (Controlled)', 'Mild Dyslipidemia'],
+      emergencyContact: {
+        name: 'Julian Vance',
+        relationship: 'Spouse',
+        phone: '+1 (555) 438-9921',
+      },
+      onboarded: true,
     };
     localStorage.setItem('medisage_token', 'demo-jwt-token-botanical-2026');
-    localStorage.setItem('medisage_user', JSON.stringify(newUser));
-    return { token: 'demo-jwt-token-botanical-2026', user: newUser };
+    localStorage.setItem('medisage_user', JSON.stringify(demoUser));
+    return { token: 'demo-jwt-token-botanical-2026', user: demoUser };
   },
 
   getCurrentUser() {
@@ -391,24 +433,12 @@ export const authService = {
         return null;
       }
     }
-    return {
-      _id: 'user-demo-1',
-      name: 'Eleanor Vance',
-      email: 'eleanor.vance@easehealth.org',
-      bloodGroup: 'O+ Positive',
-      dateOfBirth: '1988-06-14',
-      allergies: ['Penicillin', 'Sulfonamides'],
-      chronicConditions: ['Stage-1 Hypertension (Controlled)', 'Mild Dyslipidemia'],
-      emergencyContact: {
-        name: 'Julian Vance',
-        relationship: 'Spouse',
-        phone: '+1 (555) 438-9921'
-      }
-    };
+    return null;
   },
 
   updateProfile(updates) {
     const current = this.getCurrentUser();
+    if (!current) return null;
     const updated = { ...current, ...updates };
     localStorage.setItem('medisage_user', JSON.stringify(updated));
     return updated;
@@ -417,7 +447,7 @@ export const authService = {
   logout() {
     localStorage.removeItem('medisage_token');
     localStorage.removeItem('medisage_user');
-  }
+  },
 };
 
 export default api;

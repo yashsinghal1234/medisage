@@ -28,6 +28,18 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const loginDemo = async () => {
+    const data = await authService.loginDemo();
+    setUser(data.user);
+    return data;
+  };
+
+  const loginWithGoogle = async (googleData) => {
+    const data = await authService.googleAuth(googleData);
+    setUser(data.user);
+    return data;
+  };
+
   const logout = () => {
     authService.logout();
     setUser(null);
@@ -47,6 +59,8 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         register,
+        loginDemo,
+        loginWithGoogle,
         logout,
         updateProfile,
       }}

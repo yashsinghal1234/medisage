@@ -32,6 +32,36 @@ const userSchema = new mongoose.Schema({
     relationship: String,
     phone: String,
   },
+  role: {
+    type: String,
+    default: 'patient',
+  },
+  onboarded: {
+    type: Boolean,
+    default: false,
+  },
+  avatar: {
+    type: String,
+  },
+  googleId: {
+    type: String,
+  },
+  authProvider: {
+    type: String,
+    default: 'local',
+  },
+  tokenVersion: {
+    type: Number,
+    default: 0,
+  },
+  resetPasswordToken: {
+    type: String,
+    default: null,
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

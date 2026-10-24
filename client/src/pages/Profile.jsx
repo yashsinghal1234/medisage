@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Check } from 'lucide-react';
 import { DashboardNavbar } from '../components/DashboardNavbar';
 import { Footer } from '../components/Footer';
 import { PillBadge, PrimaryButton } from '../components/PillBadge';
@@ -85,9 +86,13 @@ export const Profile = () => {
               marginBottom: '21px',
               fontSize: '14px',
               fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
             }}
           >
-            ✓ Patient profile & emergency medical credentials updated successfully!
+            <Check size={18} strokeWidth={2.5} />
+            <span>Patient profile & emergency medical credentials updated successfully!</span>
           </div>
         )}
 
