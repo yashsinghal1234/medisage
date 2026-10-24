@@ -59,6 +59,8 @@ mongoose
   .then(() => {
     isMongoConnected = true;
     console.log('[OK] MongoDB connected successfully to MediSage database');
+    // Idempotent first-admin bootstrap (dev: random password printed once)
+    require('./services/adminSeed')();
   })
   .catch((err) => {
     isMongoConnected = false;
@@ -80,6 +82,7 @@ app.use('/api/family', require('./routes/family'));
 app.use('/api/fhir', require('./routes/fhir'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/audit', require('./routes/audit'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Health check root route
 app.get(['/', '/api/health'], (req, res) => {
@@ -89,7 +92,7 @@ app.get(['/', '/api/health'], (req, res) => {
     version: '3.0.0',
     database: isMongoConnected ? 'mongodb' : 'local-resilient',
     theme: 'MediSage — Clinical Vault & Health Intelligence',
-    endpoints: ['/api/auth', '/api/documents', '/api/ai', '/api/clinical', '/api/family', '/api/fhir', '/api/dashboard', '/api/audit'],
+    endpoints: ['/api/auth', '/api/documents', '/api/ai', '/api/clinical', '/api/family', '/api/fhir', '/api/dashboard', '/api/audit', '/api/admin'],
   });
 });
 

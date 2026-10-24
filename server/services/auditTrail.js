@@ -101,12 +101,28 @@ async function record({ userId = null, action, resourceType = 'system', resource
     };
 
     if (mongoReady()) {
-      // Fetch last hash for the chain
-      const last = await getModel().findOne({}).sort({ seq: -1 }).select('seq hash').lean();
-      entry.seq = (last?.seq || 0) + 1;
-      entry.prevHash = last?.hash || null;
-      entry.hash = computeHash(entry, entry.prevHash);
-      await getModel().create(entry);
+      // Serialized append with retry: concurrent recorders race for "last"
+      // and would otherwise fork the hash chain. The unique seq index turns
+      // a lost race into a retry instead of a fork.
+      const MAX_ATTEMPTS = 4;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          const last = await getModel().findOne({}).sort({ seq: -1 }).select('seq hash').lean();
+          entry.seq = (last?.seq || 0) + 1;
+          entry.prevHash = last?.hash || null;
+          entry.hash = computeHash(entry, entry.prevHash);
+          await getModel().create(entry);
+          return;
+        } catch (writeErr) {
+          const duplicate = writeErr?.code === 11000 ||
+            (typeof writeErr?.message === 'string' && writeErr.message.includes('duplicate key'));
+          if (duplicate && attempt < MAX_ATTEMPTS) {
+            await new Promise((r) => setTimeout(r, 15 * attempt)); // small backoff, then re-read tail
+            continue;
+          }
+          throw writeErr;
+        }
+      }
     } else {
       const rows = readLocalAudit();
       const last = rows[rows.length - 1];

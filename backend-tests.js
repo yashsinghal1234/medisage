@@ -279,6 +279,56 @@ async function waitForServer(retries = 20) {
     console.log('  [SKIP] family vault CRUD (requires the database; returns 503 in local mode)');
   }
 
+  // ---------------- 4b. ADMIN & COMPLIANCE CONSOLE ----------------
+  console.log('\n== ADMIN CONSOLE ==');
+  if (health.database === 'mongodb') {
+    const adminEmail = 'admin@medisage.health';
+    const adminPassword = 'Adm!nLocal2026';
+    const adminLogin = await req('POST', '/api/auth/login', { body: { email: adminEmail, password: adminPassword } });
+    check('seeded admin can login', adminLogin.status === 200 && adminLogin.json?.user?.role === 'admin', `status=${adminLogin.status} role=${adminLogin.json?.user?.role}`);
+    const adminToken = adminLogin.json?.token;
+
+    const patientReg = await req('POST', '/api/auth/register', {
+      body: { name: 'Admin Target', email: `admintarget${stamp}@medisage.health`, password: 'Test1234' },
+    });
+    const patientToken = patientReg.json?.token;
+    // publicProfile exposes `id` (client contract); DB docs may use `_id`
+    const patientId = patientReg.json?.user?.id || patientReg.json?.user?._id;
+
+    const patientAdminAccess = await req('GET', '/api/admin/users', { token: patientToken });
+    check('patient blocked from admin console (403)', patientAdminAccess.status === 403, `status=${patientAdminAccess.status}`);
+
+    const usersList = await req('GET', '/api/admin/users?limit=5', { token: adminToken });
+    check('admin lists users', usersList.status === 200 && Array.isArray(usersList.json?.users) && usersList.json.users.length > 0);
+
+    const promote = await req('PUT', `/api/admin/users/${patientId}/role`, { token: adminToken, body: { role: 'admin' } });
+    check('admin promotes a user', promote.status === 200 && promote.json?.user?.role === 'admin', JSON.stringify(promote.json?.error || promote.status));
+    const promoteeToken = patientToken; // tv bump should have killed it
+    const promoteeProfile = await req('GET', '/api/auth/profile', { token: promoteeToken });
+    check('promoted historic token invalidated (tv bump)', promoteeProfile.status === 401, `status=${promoteeProfile.status}`);
+
+    const demote = await req('PUT', `/api/admin/users/${patientId}/role`, { token: adminToken, body: { role: 'patient' } });
+    check('admin demotes a user', demote.status === 200 && demote.json?.user?.role === 'patient');
+
+    const adminId = adminLogin.json?.user?._id;
+    const selfRoleChange = await req('PUT', `/api/admin/users/${adminId}/role`, { token: adminToken, body: { role: 'patient' } });
+    check('admin cannot change own role (self-guard)', selfRoleChange.status === 400, `status=${selfRoleChange.status}`);
+
+    const revoke = await req('POST', `/api/admin/users/${patientId}/revoke-sessions`, { token: adminToken });
+    check('admin force-logs-out a user', revoke.status === 200);
+
+    const verifyChain = await req('GET', '/api/audit/verify', { token: adminToken });
+    check('admin verifies the audit hash chain', verifyChain.status === 200 && verifyChain.json?.valid === true, JSON.stringify(verifyChain.json));
+
+    const recent = await req('GET', '/api/audit/recent?action=role_changed&limit=5', { token: adminToken });
+    check('admin audit search finds role_changed entries', recent.status === 200 && (recent.json?.entries || []).length > 0);
+
+    const noAdminToken = await req('GET', '/api/audit/verify', {});
+    check('audit verify requires auth', noAdminToken.status === 401);
+  } else {
+    console.log('  [SKIP] admin console (requires the database; returns 503 in local mode)');
+  }
+
   // ---------------- 5. DASHBOARD ----------------
   console.log('\n== DASHBOARD ==');
   const stats = await req('GET', '/api/dashboard/stats', { token });

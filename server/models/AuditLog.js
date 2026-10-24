@@ -71,5 +71,8 @@ const auditLogSchema = new mongoose.Schema({
 // Compound index for chronological paging
 auditLogSchema.index({ createdAt: -1 });
 auditLogSchema.index({ userId: 1, createdAt: -1 });
+// seq must be globally unique: concurrent recorders retry on conflicts so the
+// hash chain is never forked by two entries claiming the same position.
+auditLogSchema.index({ seq: 1 }, { unique: true });
 
 module.exports = mongoose.model('AuditLog', auditLogSchema);

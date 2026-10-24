@@ -43,6 +43,10 @@ const config = {
     return /^your_/.test(raw) ? '' : raw.trim();
   })(),
   FILE_ENCRYPTION_KEY: process.env.FILE_ENCRYPTION_KEY || '',
+  // First-admin bootstrap for the audit/compliance console.
+  // Set both explicitly in production; in dev a random admin is auto-seeded.
+  ADMIN_SEED_EMAIL: (process.env.ADMIN_SEED_EMAIL || '').trim(),
+  ADMIN_SEED_PASSWORD: (process.env.ADMIN_SEED_PASSWORD || '').trim(),
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
   // Comma-separated whitelist. Dev defaults keep both common Vite ports working.
   CORS_ORIGINS: (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:5173')
