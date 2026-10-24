@@ -5,39 +5,44 @@
  */
 
 const rateLimit = require('express-rate-limit');
+const config = require('../config/env');
+
+/** Dev/test switch: rate limiter no-ops when explicitly disabled and never in production. */
+const limiterNoop = (req, res, next) => next();
+const moot = (limiterFactory) => (config.RATE_LIMITS_DISABLED && !config.isProd ? limiterNoop : limiterFactory());
 
 /** Global limiter — generous baseline to absorb bursts, block floods. */
-const globalLimiter = rateLimit({
+const globalLimiter = moot(() => rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests from this address. Please slow down and try again shortly.' },
-});
+}));
 
 /** Strict limiter for credential endpoints (brute-force protection). */
-const authLimiter = rateLimit({
+const authLimiter = moot(() => rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   message: { error: 'Too many authentication attempts. Please wait 15 minutes and try again.' },
-});
+}));
 
 /** Upload/extract endpoints cost disk + CPU — cap harder. */
-const uploadLimiter = rateLimit({
+const uploadLimiter = moot(() => rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 60,
   message: { error: 'Upload limit reached for this hour. Please try again later.' },
-});
+}));
 
 /** AI endpoints proxy paid/stationary resources. */
-const aiLimiter = rateLimit({
+const aiLimiter = moot(() => rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 60,
   message: { error: 'Too many AI requests. Please wait a few minutes before trying again.' },
-});
+}));
 
 /**
  * CORS policy — only whitelisted origins (CORS_ORIGINS in .env).

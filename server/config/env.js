@@ -62,6 +62,8 @@ const config = {
   SMTP_FROM: (process.env.SMTP_FROM || 'MediSage <no-reply@medisage.health>').trim(),
   // Base URL used inside reset links (client route lives at /reset-password?token=...)
   APP_PUBLIC_URL: (process.env.APP_PUBLIC_URL || '').trim(),
+  // Dev/test-only: disables ALL rate limiters (refuses to apply in production).
+  RATE_LIMITS_DISABLED: (process.env.RATE_LIMITS_DISABLED || '') === 'true',
   // Extra local-only collectibles (password reset tokens are logged when no SMTP)
   DEV_DEBUG: NODE_ENV !== 'production',
 };
