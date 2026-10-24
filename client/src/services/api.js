@@ -4,19 +4,67 @@ const API_BASE = '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
+  withCredentials: true, // httpOnly session cookies (medisage_token / medisage_refresh) travel on every request
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor for JWT auth token
+// Legacy & offline-demo support: if a token happens to sit in localStorage
+// (old session or offline fallback), attach it. New sessions rely on cookies.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('medisage_token');
-  if (token) {
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+/**
+ * Rotate the current session using the httpOnly refresh cookie.
+ * @returns {Promise<boolean>} true when a fresh session is active
+ */
+export async function refreshSession() {
+  try {
+    await api.post('/auth/refresh', {});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Single-flight 401 recovery: when an access token expires, rotate the
+// session via the refresh cookie and replay the original request once.
+let refreshInFlight = null;
+api.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    const { config, response } = err;
+    const isAuthCall = config?.url?.includes('/auth/');
+    if (response?.status === 401 && config && !config.__retriedAuth && !isAuthCall) {
+      config.__retriedAuth = true;
+      try {
+        refreshInFlight = refreshInFlight || api.post('/auth/refresh', {});
+        const refreshed = await refreshInFlight;
+        refreshInFlight = null;
+        if (refreshed?.data?.token) {
+          config.headers.Authorization = `Bearer ${refreshed.data.token}`;
+          localStorage.setItem('medisage_token', refreshed.data.token);
+        }
+        return await api(config);
+      } catch (refreshErr) {
+        refreshInFlight = null;
+        if (refreshErr.response?.data?.error || refreshErr.response?.status) {
+          // Session revoked or expired — drop any stale Bearer token so the
+          // cookie (or a fresh login) becomes the only session channel.
+          localStorage.removeItem('medisage_token');
+        }
+        return Promise.reject(err);
+      }
+    }
+    return Promise.reject(err);
+  }
+);
 
 // Mock Initial Clinical Documents for Instant Demo & Offline Reliability
 const INITIAL_DOCUMENTS = [
@@ -330,7 +378,8 @@ export const authService = {
     try {
       const res = await api.post('/auth/login', { email, password });
       if (res.data && res.data.token) {
-        localStorage.setItem('medisage_token', res.data.token);
+        // Session cookie was set by the server (httpOnly). Only the public
+        // profile is cached locally — never the raw token.
         localStorage.setItem('medisage_user', JSON.stringify(res.data.user));
         return res.data;
       }
@@ -345,7 +394,6 @@ export const authService = {
     try {
       const res = await api.post('/auth/register', data);
       if (res.data && res.data.token) {
-        localStorage.setItem('medisage_token', res.data.token);
         localStorage.setItem('medisage_user', JSON.stringify(res.data.user));
         return res.data;
       }
@@ -360,7 +408,6 @@ export const authService = {
     try {
       const res = await api.post('/auth/google', googleData);
       if (res.data && res.data.token) {
-        localStorage.setItem('medisage_token', res.data.token);
         localStorage.setItem('medisage_user', JSON.stringify(res.data.user));
         return res.data;
       }
@@ -371,7 +418,8 @@ export const authService = {
       if (err.response?.data?.error) {
         throw new Error(err.response.data.error);
       }
-      // Resilient local fallback for offline/disconnected demo mode
+      // Resilient local fallback ONLY when the server itself is unreachable
+      // (offline demo mode). Real auth failures above are never masked.
       const email = googleData.email || 'dr.google.user@gmail.com';
       const fallbackUser = {
         _id: 'user-google-' + Date.now(),
@@ -396,7 +444,6 @@ export const authService = {
     try {
       const res = await api.post('/auth/demo');
       if (res.data && res.data.token) {
-        localStorage.setItem('medisage_token', res.data.token);
         localStorage.setItem('medisage_user', JSON.stringify(res.data.user));
         return res.data;
       }
@@ -424,6 +471,49 @@ export const authService = {
     return { token: 'demo-jwt-token-botanical-2026', user: demoUser };
   },
 
+  /**
+   * Session bootstrap: verify against the server instead of trusting localStorage.
+   * - Live cookie/Bearer session  -> profile fetched & cache refreshed.
+   * - Expired but refreshable     -> one cookie rotation, then retry.
+   * - Invalid session             -> cleared (real users re-authenticate).
+   * - Offline (network error)     -> cached/demoted demo session kept.
+   */
+  async bootstrapAuth() {
+    try {
+      const res = await api.get('/auth/profile');
+      if (res.data) {
+        localStorage.setItem('medisage_user', JSON.stringify(res.data));
+        return res.data;
+      }
+    } catch (err) {
+      if (err.response) {
+        // Server reachable — session may have expired while away
+        if (await refreshSession()) {
+          try {
+            const res = await api.get('/auth/profile');
+            if (res.data) {
+              localStorage.setItem('medisage_user', JSON.stringify(res.data));
+              return res.data;
+            }
+          } catch {
+            // fall through to invalid-session handling
+          }
+        }
+        // Offline demo fallback tokens (never server-issued) are allowed to go
+        // on stale; anything else is a genuinely dead session.
+        const token = localStorage.getItem('medisage_token');
+        if (token && !token.startsWith('demo-') && !token.startsWith('google-oauth-')) {
+          this.logout();
+          return null;
+        }
+        return this.getCurrentUser();
+      }
+      // Network unreachable — offline resilience keeps the cached session
+      return this.getCurrentUser();
+    }
+    return null;
+  },
+
   getCurrentUser() {
     const user = localStorage.getItem('medisage_user');
     if (user) {
@@ -436,15 +526,31 @@ export const authService = {
     return null;
   },
 
-  updateProfile(updates) {
+  /** Server-backed profile update with local-cache fallback for offline mode. */
+  async updateProfile(updates) {
     const current = this.getCurrentUser();
-    if (!current) return null;
-    const updated = { ...current, ...updates };
-    localStorage.setItem('medisage_user', JSON.stringify(updated));
+    let updated = current ? { ...current, ...updates } : null;
+    try {
+      const res = await api.put('/auth/profile', updates);
+      if (res.data?.user) {
+        updated = res.data.user;
+        localStorage.setItem('medisage_user', JSON.stringify(updated));
+        return updated;
+      }
+    } catch {
+      // Offline: keep the optimistic merged profile in cache
+    }
+    if (updated) localStorage.setItem('medisage_user', JSON.stringify(updated));
     return updated;
   },
 
-  logout() {
+  /** Revoke server-side sessions (cookies + refresh tokens), then purge local cache. */
+  async logout() {
+    try {
+      await api.post('/auth/logout', {});
+    } catch {
+      // Best-effort revocation; local purge proceeds regardless
+    }
     localStorage.removeItem('medisage_token');
     localStorage.removeItem('medisage_user');
   },

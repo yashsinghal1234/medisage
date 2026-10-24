@@ -588,7 +588,7 @@ router.get('/profile', authMiddleware, async (req, res, next) => {
 const profileChecks = [
   body('name').optional().trim().isLength({ min: 2, max: 80 }).withMessage('Name must be 2–80 characters'),
   body('dateOfBirth').optional({ nullable: true }).isString(),
-  body('bloodGroup').optional({ nullable: true }).isString().isLength({ max: 10 }),
+  body('bloodGroup').optional({ nullable: true }).isString().isLength({ max: 20 }).withMessage('Blood group must be 20 characters or fewer'),
   body('allergies').optional({ nullable: true }).isArray().withMessage('allergies must be an array'),
   body('chronicConditions').optional({ nullable: true }).isArray().withMessage('chronicConditions must be an array'),
   body('emergencyContact').optional({ nullable: true }).isObject(),

@@ -8,12 +8,24 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initAuth = () => {
-      const currentUser = authService.getCurrentUser();
-      setUser(currentUser);
-      setLoading(false);
+    let cancelled = false;
+    // Server-verified bootstrap instead of trusting localStorage: an expired
+    // session is rotated once, an invalid one is cleared, and offline mode
+    // gracefully keeps the cached profile.
+    const initAuth = async () => {
+      try {
+        const currentUser = await authService.bootstrapAuth();
+        if (!cancelled) setUser(currentUser);
+      } catch {
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     initAuth();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = async (email, password) => {
@@ -40,14 +52,15 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
   };
 
-  const updateProfile = (updates) => {
-    const updated = authService.updateProfile(updates);
-    setUser(updated);
+  // Server-persisted profile edits with optimistic local merge (offline-safe)
+  const updateProfile = async (updates) => {
+    const updated = await authService.updateProfile(updates);
+    if (updated) setUser(updated);
     return updated;
   };
 
