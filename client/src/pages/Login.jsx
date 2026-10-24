@@ -17,6 +17,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { authService } from '../services/api';
 import { Logo } from '../components/Logo';
 
 // Official Multi-Color Google G Icon
@@ -225,10 +226,17 @@ export const Login = () => {
     }
   };
 
-  // Forgot Password Submit
-  const handleForgotSubmit = (e) => {
+  // Forgot Password Submit — real server request; the response stays
+  // neutral either way (no account enumeration), so the success view
+  // shows regardless.
+  const handleForgotSubmit = async (e) => {
     e.preventDefault();
-    if (!forgotEmail) return;
+    if (!forgotEmail || forgotSuccess) return;
+    try {
+      await authService.forgotPassword(forgotEmail);
+    } catch {
+      // Rate-limited or offline — the UI flow remains the same
+    }
     setForgotSuccess(true);
   };
 

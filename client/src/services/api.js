@@ -555,6 +555,15 @@ export const authService = {
     localStorage.removeItem('medisage_token');
     localStorage.removeItem('medisage_user');
   },
+
+  /**
+   * Request a password reset. The response is intentionally neutral — the
+   * server never reveals whether the address exists (no account enumeration).
+   */
+  async forgotPassword(email) {
+    const res = await api.post('/auth/forgot-password', { email });
+    return res.data;
+  },
 };
 
 export default api;

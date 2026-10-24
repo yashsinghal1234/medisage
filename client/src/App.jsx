@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 
 import { Home } from './pages/Home';
 import { Login, Register } from './pages/Login';
+import { ResetPassword } from './pages/ResetPassword';
 import { Dashboard } from './pages/Dashboard';
 import { Upload } from './pages/Upload';
 import { AIInsights } from './pages/AIInsights';
@@ -21,6 +22,7 @@ export function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected Health Vault Routes */}
           <Route

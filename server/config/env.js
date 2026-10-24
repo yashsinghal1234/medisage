@@ -53,6 +53,15 @@ const config = {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean),
+  // SMTP delivery for password resets. Unconfigured = dev console fallback.
+  SMTP_HOST: (process.env.SMTP_HOST || '').trim(),
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
+  SMTP_SECURE: process.env.SMTP_SECURE === 'true', // true for 465, false for 587/STARTTLS
+  SMTP_USER: (process.env.SMTP_USER || '').trim(),
+  SMTP_PASS: process.env.SMTP_PASS || '',
+  SMTP_FROM: (process.env.SMTP_FROM || 'MediSage <no-reply@medisage.health>').trim(),
+  // Base URL used inside reset links (client route lives at /reset-password?token=...)
+  APP_PUBLIC_URL: (process.env.APP_PUBLIC_URL || '').trim(),
   // Extra local-only collectibles (password reset tokens are logged when no SMTP)
   DEV_DEBUG: NODE_ENV !== 'production',
 };

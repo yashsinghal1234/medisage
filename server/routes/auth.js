@@ -33,6 +33,7 @@ const authMiddleware = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { authLimiter } = require('../middleware/security');
 const auditTrail = require('../services/auditTrail');
+const mailer = require('../services/mailer');
 const { GoogleAuthError, isGoogleConfigured, verifyGoogleCredential } = require('../services/googleAuth');
 
 const router = express.Router();
@@ -680,7 +681,7 @@ router.put(
 );
 
 // ------------------------------------------------------------------
-// 9. FORGOT PASSWORD (token-issued; SMTP integration is future work)
+// 9. FORGOT PASSWORD (SMTP delivery when configured; console token fallback)
 // ------------------------------------------------------------------
 router.post(
   '/forgot-password',
@@ -709,11 +710,25 @@ router.post(
           localUsers[idx].resetPasswordExpires = expires.toISOString();
           saveLocalUsers(localUsers);
         }
-        console.log(`\n[PASSWORD RESET] Requested for ${cleanEmail}`);
-        console.log(`   token (valid 1h): ${token}\n`);
-        audit({ req, userId: user._id, action: 'password_reset_requested', resourceType: 'user', resourceId: user._id });
+
+        let delivery = 'console';
+        if (mailer.isMailConfigured()) {
+          const sent = await mailer.sendPasswordResetMail({ to: cleanEmail, name: user.name, token });
+          if (sent.delivered) {
+            delivery = 'smtp';
+          } else if (sent.skipped !== 'smtp-not-configured') {
+            // SMTP configured but failed (bad relay, etc.) — console fallback
+            // keeps the flow usable without leaking status to the client.
+            console.warn('[PASSWORD RESET] SMTP delivery failed; falling back to console token:', sent.error);
+          }
+        }
+        if (delivery === 'console') {
+          console.log(`\n[PASSWORD RESET] Requested for ${cleanEmail}`);
+          console.log(`   token (valid 1h): ${token}\n`);
+        }
+        audit({ req, userId: user._id, action: 'password_reset_requested', resourceType: 'user', resourceId: user._id, meta: { delivery } });
       }
-      res.json({ message: 'If an account exists for this email, a password reset has been issued. Check the server console (no SMTP configured yet).' });
+      res.json({ message: 'If an account exists for this email, a password reset link has been issued.' });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -772,6 +787,9 @@ router.post(
         await RefreshToken.updateMany({ userId: user._id, revokedAt: null }, { revokedAt: new Date() });
       }
       audit({ req, userId: user._id, action: 'password_reset', resourceType: 'user', resourceId: user._id, meta: { mode: isLocal ? 'local' : 'mongodb' } });
+      if (mailer.isMailConfigured() && !isLocal && user.email) {
+        mailer.sendPasswordChangedNotice({ to: user.email, name: user.name }).catch(() => {});
+      }
       res.json({ message: 'Password reset successful. You can now sign in with your new password.' });
     } catch (error) {
       res.status(500).json({ error: error.message });
