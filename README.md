@@ -221,9 +221,11 @@ MediSage implements a serene, editorial, clinical-botanical aesthetic inspired b
 - **Runtime**: [Node.js](https://nodejs.org/) (v18.x or v20.x recommended)
 - **Web Framework**: [Express.js 4.18.2](https://expressjs.com/)
 - **Database & ODM**: [MongoDB](https://www.mongodb.com/) + [Mongoose 7.8.4](https://mongoosejs.com/)
-- **Authentication**: [JSON Web Tokens (jsonwebtoken 9.0)](https://jwt.io/) + [Bcryptjs 2.4](https://github.com/dcodeIO/bcrypt.js)
-- **File Uploads**: [Multer 1.4.5-lts](https://github.com/expressjs/multer)
-- **AI Agent Integration**: [LangChain](https://js.langchain.com/) + [OpenAI API](https://platform.openai.com/)
+- **Authentication**: [JSON Web Tokens (jsonwebtoken 9.0)](https://jwt.io/) + [Bcryptjs 2.4](https://github.com/dcodeIO/bcrypt.js) + httpOnly cookie sessions (`cookie-parser`)
+- **Security Middleware**: [Helmet 8](https://helmetjs.github.io/), CORS origin whitelist, [express-rate-limit 8](https://express-rate-limit.miguelalvs.dev/), [express-validator 7](https://express-validator.github.io/)
+- **Google Identity**: [google-auth-library](https://github.com/googleapis/google-auth-library-nodejs) (server-side ID token verification)
+- **File Uploads**: [Multer 1.4.5-lts](https://github.com/expressjs/multer) (memory storage → AES-256-GCM vault)
+- **AI Agent Integration**: [LangChain](https://js.langchain.com/) + [OpenAI API](https://platform.openai.com/) with zero-failure heuristic fallback
 - **Development Tooling**: [Concurrently 8.2](https://github.com/open-cli-tools/concurrently)
 
 ---
@@ -233,39 +235,53 @@ MediSage implements a serene, editorial, clinical-botanical aesthetic inspired b
 ```
 Medisage/
 ├── package.json                   # Root package script runner
-├── README.md                      # Primary project documentation
-└── MediSage/
-    ├── .env.example               # Environment variables blueprint
-    ├── .gitignore                 # Git ignore rules
-    ├── package.json               # Backend & root dependencies
-    ├── test-api.js                # Automated backend API testing suite
-    │
-    ├── server/                    # Node.js Express REST Backend
-    │   ├── server.js              # Express app bootstrap, static uploads, MongoDB connection
-    │   ├── models/                # Mongoose Database Models
-    │   │   ├── User.js            # User profile, blood group, allergies, chronic conditions
-    │   │   └── Document.js        # Document metadata, LOINC biomarkers, RxNorm meds, tags
-    │   ├── routes/                # REST API Endpoints
-    │   │   ├── auth.js            # Register, Login, Profile GET/PUT
-    │   │   ├── documents.js       # OCR Extract, Upload, List, GetById, Delete
-    │   │   └── ai.js              # Analyze-history, Recommend-insurance, Clinical Chat
-    │   ├── middleware/
-    │   │   └── auth.js            # JWT Bearer Token validation middleware
-    │   ├── services/
-    │   └── uploads/               # Local storage directory for uploaded clinical files
-    │
-    └── client/                    # React 19 + Vite Frontend Application
-        ├── index.html             # HTML entry point with Google Fonts preloads
-        ├── package.json           # Frontend dependencies & scripts
-        ├── vite.config.js         # Vite configuration with API proxy (/api -> http://localhost:5000)
-        └── src/
-            ├── main.jsx           # React DOM root render
-            ├── App.jsx            # React Router v7 routes configuration
-            ├── index.css          # Ease Health Botanical Design Tokens, Utility Classes, Fonts
-            ├── context/           # Global user authentication & session state
-            ├── services/          # Axios API client, demo fixtures & offline fallback engine
-            ├── components/        # Reusable UI & Clinical Modules
-            └── pages/             # Main Application Routes
+├── backend-tests.js               # End-to-end backend suite (59 checks)
+├── .env.example                   # Environment variables blueprint
+├── .gitignore                     # Git ignore rules (secrets, local data, uploads)
+│
+├── server/                        # Node.js Express REST Backend
+│   ├── server.js                  # Express bootstrap: helmet, CORS, cookie-parser, MongoDB connection
+│   ├── config/env.js              # Unified env/secrets parsing & validation
+│   ├── models/                    # Mongoose Database Models
+│   │   ├── User.js                # Profile, blood group, allergies, tokenVersion
+│   │   ├── Document.js            # Metadata, LOINC biomarkers, RxNorm meds, vault file refs
+│   │   ├── FamilyMember.js        # Dependent profiles for the household vault
+│   │   ├── RefreshToken.js        # Single-use refresh tokens with revocation
+│   │   └── AuditLog.js            # Hash-chained audit entries (TTL-managed)
+│   ├── routes/
+│   │   ├── auth.js                # Register, login, Google, password flows, cookies, token rotation
+│   │   ├── documents.js           # Encrypted vault upload, list/search, Decrypting file stream
+│   │   ├── ai.js                  # Health synthesis, insurance matching, clinical chat
+│   │   ├── clinical.js            # Drug interaction engine + sandbox simulator
+│   │   ├── family.js              # Household dependent vault CRUD
+│   │   ├── fhir.js                # HL7 FHIR R4 bundle export
+│   │   ├── dashboard.js           # Vault stats & biomarker trends
+│   │   └── audit.js               # Self-audit, chain verification, admin review
+│   ├── middleware/
+│   │   ├── auth.js                # JWT validation — Bearer header or httpOnly cookie
+│   │   ├── security.js            # helmet, CORS whitelist, rate limiters, error handler
+│   │   └── validate.js            # express-validator wrapper
+│   ├── services/
+│   │   ├── fileVault.js           # AES-256-GCM at-rest envelope encryption (MSV1)
+│   │   ├── auditTrail.js          # Hash-chained audit recorder + verifier
+│   │   ├── interactionEngine.js   # CYP450/renal/allergy pharmacovigilance
+│   │   ├── fhirSerializer.js      # LOINC/RxNorm/SNOMED FHIR mapping
+│   │   ├── documentExtractor.js   # Clinical entity extraction
+│   │   └── googleAuth.js          # Server-verified Google ID tokens
+│   └── uploads/                   # Encrypted-at-rest clinical files (git-ignored)
+│
+└── client/                        # React 19 + Vite Frontend Application
+    ├── index.html                 # HTML entry point with Google Fonts preloads
+    ├── package.json               # Frontend dependencies & scripts
+    ├── vite.config.js             # Vite configuration with API proxy (/api -> http://localhost:5000)
+    └── src/
+        ├── main.jsx               # React DOM root render
+        ├── App.jsx                # React Router v7 routes configuration
+        ├── index.css              # Ease Health Botanical Design Tokens, Utility Classes, Fonts
+        ├── context/               # Global user authentication & session state
+        ├── services/              # Axios API client, demo fixtures & offline fallback engine
+        ├── components/            # Reusable UI & Clinical Modules
+        └── pages/                 # Main Application Routes
 ```
 
 ---
@@ -274,73 +290,28 @@ Medisage/
 
 ### Base URL: `http://localhost:5000/api`
 
-### 1. Authentication Endpoints (`/api/auth`)
+Every route is grouped under a dedicated router — consult the files in `server/routes/` for the full, always-accurate list of endpoints, request shapes, and validation rules.
 
-| Method | Endpoint | Description | Auth Required | Request Body / Params |
-| :--- | :--- | :--- | :---: | :--- |
-| `POST` | `/api/auth/register` | Register new patient profile | No | `{ name, email, password, dateOfBirth, bloodGroup, allergies[], chronicConditions[], emergencyContact }` |
-| `POST` | `/api/auth/login` | Authenticate user & receive JWT + refresh token | No | `{ email, password }` |
-| `POST` | `/api/auth/google` | Google Sign-In (One Tap ID token, server-verified) | No | `{ credential }` |
-| `POST` | `/api/auth/refresh` | Rotate tokens | No | `{ refreshToken }` |
-| `POST` | `/api/auth/logout` | Revoke sessions | Yes (JWT) | `{ refreshToken? }` |
-| `POST` | `/api/auth/forgot-password` | Issue reset token (logged to server console) | No | `{ email }` |
-| `POST` | `/api/auth/reset-password` | Complete password reset | No | `{ token, password }` |
-| `PUT` | `/api/auth/change-password` | Change password (invalidates old tokens) | Yes (JWT) | `{ currentPassword, newPassword }` |
-| `GET` | `/api/auth/profile` | Retrieve active patient profile | Yes (JWT) | *None* |
-| `PUT` | `/api/auth/profile` | Update profile vitals & emergency contact | Yes (JWT) | `{ name, dateOfBirth, bloodGroup, allergies[], chronicConditions[], emergencyContact }` |
+| Router | File | Purpose |
+| :--- | :--- | :--- |
+| `/api/auth` | `routes/auth.js` | Register, login, Google Sign-In, password flows, profile, token refresh & logout |
+| `/api/documents` | `routes/documents.js` | Clinical OCR extraction, vault upload, list/search, metadata patch, decrypting file stream |
+| `/api/ai` | `routes/ai.js` | Longitudinal health synthesis, insurance matching, conversational companion |
+| `/api/clinical` | `routes/clinical.js` | Pharmacodynamic interaction engine + sandbox simulator + profile scan |
+| `/api/family` | `routes/family.js` | Household vault: add/update/remove dependent profiles |
+| `/api/fhir` | `routes/fhir.js` | HL7 FHIR R4 document Bundle export (`application/fhir+json`) |
+| `/api/dashboard` | `routes/dashboard.js` | Vault overview stats and longitudinal biomarker trends |
+| `/api/audit` | `routes/audit.js` | Self-audit log (`/me`), admin chain verification (`/verify`) and search (`/recent`) |
 
-### 2. Clinical Document Endpoints (`/api/documents`)
+**Authentication & sessions.** Tokens are issued both as **httpOnly `SameSite=Strict` cookies** (`medisage_token`, `medisage_refresh`) — the XSS-resistant browser channel — and as JSON body fields (`token`, `refreshToken`) for API/mobile clients. The auth middleware accepts either the `Authorization: Bearer` header or the session cookie. Password changes bump the user's `tokenVersion`, instantly invalidating every previously issued token; refresh tokens are single-use with DB-backed rotation.
 
-| Method | Endpoint | Description | Auth Required | Request Body / Params |
-| :--- | :--- | :--- | :---: | :--- |
-| `POST` | `/api/documents/extract` | Autonomous OCR & Entity Extraction | Yes (JWT) | `multipart/form-data` with `file` OR `{ textContent }` |
-| `POST` | `/api/documents/upload` | Upload & index document in vault | Yes (JWT) | `multipart/form-data` with `file`, `title`, `documentType`, `doctor`, `hospital`, `diagnosis`, `tags`, `medications` |
-| `GET` | `/api/documents` | List user documents (filters + pagination via `X-Total-Count` headers) | Yes (JWT) | Query params: `?type=prescription&search=cholesterol&page=1&limit=50&member=<familyId>` |
-| `GET` | `/api/documents/:id` | Fetch specific document metadata | Yes (JWT) | URL Param: `id` |
-| `GET` | `/api/documents/:id/file` | Authenticated file stream / download (`?download=true`) | Yes (JWT) | URL Param: `id` |
-| `PATCH` | `/api/documents/:id` | Update document metadata (correct extractions) | Yes (JWT) | `{ title?, documentType?, description?, documentDate?, tags?, metadata? }` |
-| `DELETE`| `/api/documents/:id` | Delete document & unlink local file | Yes (JWT) | URL Param: `id` |
-
-### 3. AI & Clinical Intelligence Endpoints (`/api/ai`)
-
-| Method | Endpoint | Description | Auth Required | Request Body / Params |
-| :--- | :--- | :--- | :---: | :--- |
-| `POST` | `/api/ai/analyze-history` | Generate longitudinal synthesis from the real vault | Yes (JWT) | `{}` (optionally `{ age, allergies[], chronicConditions[] }` overrides) |
-| `POST` | `/api/ai/recommend-insurance` | Match health plans to the real risk profile | Yes (JWT) | `{ age?, chronicConditions?, allergies? }` |
-| `POST` | `/api/ai/chat` | Interactive clinical companion (real user context) | Yes (JWT) | `{ messages: [{ role: 'user', content: '...' }] }` |
-
-### 4. Pharmacovigilance & Clinical Safety (`/api/clinical`)
-
-| Method | Endpoint | Description | Auth Required | Request Body / Params |
-| :--- | :--- | :--- | :---: | :--- |
-| `POST` | `/api/clinical/interactions` | Evaluate a medication list against the interaction knowledge base | Yes (JWT) | `{ medications[], allergies?, egfr?, age? }` |
-| `POST` | `/api/clinical/sandbox` | Sandbox Simulator — prospective meds before ingestion | Yes (JWT) | `{ medications[], allergies?, egfr?, age? }` |
-| `GET` | `/api/clinical/profile-scan` | Scan parsed medications out of uploaded prescriptions | Yes (JWT) | *None* |
-
-Severity-ranked alerts (`critical|high|moderate|low`) cite `mechanism`, `effect` and `advice`, backed by a CYP450 / renal / allergy-cross-reactivity knowledge base (`server/data/interactions.js`).
-
-### 5. Family & Dependent Vault (`/api/family`)
-
-| Method | Endpoint | Description | Auth Required | Request Body / Params |
-| :--- | :--- | :--- | :---: | :--- |
-| `GET` | `/api/family` | List dependents in the household vault | Yes (JWT) | *None* |
-| `POST` | `/api/family` | Add a dependent | Yes (JWT) | `{ name, relationship, dateOfBirth?, bloodGroup?, allergies?, chronicConditions?, emergencyContact? }` |
-| `PUT` | `/api/family/:id` | Update a dependent | Yes (JWT) | Partial fields |
-| `DELETE` | `/api/family/:id` | Remove a dependent | Yes (JWT) | URL Param: `id` |
-
-### 6. HL7 FHIR R4 Export & Dashboard (`/api/fhir`, `/api/dashboard`)
-
-| Method | Endpoint | Description | Auth Required | Request Body / Params |
-| :--- | :--- | :--- | :---: | :--- |
-| `GET` | `/api/fhir/bundle` | HL7 FHIR R4 document Bundle (`application/fhir+json`) | Yes (JWT) | `?member=<familyId>` for a dependent |
-| `GET` | `/api/dashboard/stats` | Vault overview (counts, latest biomarkers, recents) | Yes (JWT) | *None* |
-| `GET` | `/api/dashboard/trends` | Longitudinal biomarker series for charts | Yes (JWT) | `?range=1m|6m|1y|all` |
+**Auditability.** Every PHI-touching call (document view/download/upload/patch/delete, family CRUD, FHIR export, AI queries, interaction checks) and every auth event is written to a SHA-256 hash-chained audit trail — including failed attempts. No audit record ever stores passwords, tokens, or document payloads, and audit failures are fire-and-forget so they can never break a live request.
 
 ---
 
 ## ⚙️ Environment Configuration
 
-Create a `.env` file inside `MediSage/` (or copy from `.env.example`):
+Create a `.env` file in the repository root (or copy from `.env.example`):
 
 ```env
 # Server Port (Default: 5000)
@@ -350,12 +321,28 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/medisage
 
 # JSON Web Token Secret Key for Session Signing
-JWT_SECRET=medisage_super_secret_clinical_jwt_key_2026
+# Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+JWT_SECRET=replace_with_strong_random_hex
+
+# Uploaded clinical files are encrypted at rest (AES-256-GCM) with this 256-bit key.
+# Keep it OUT of git — house it in a secret manager (Vault / AWS Secrets Manager) for production.
+# Rotating it makes previously encrypted uploads unreadable, so plan rotation carefully.
+FILE_ENCRYPTION_KEY=replace_with_strong_random_hex_key
+
+# Access / refresh token lifetimes
+JWT_ACCESS_EXPIRES=7d
+JWT_REFRESH_EXPIRES=30d
+
+# CORS — comma-separated list of allowed frontend origins (cross-origin requests are denied otherwise)
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Google OAuth Client ID (server-side verification of One Tap / Sign-In credential)
+GOOGLE_CLIENT_ID=your_google_client_id_here.apps.googleusercontent.com
 
 # OpenAI API Key (Optional — Heuristic botanical engine active by default)
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Runtime Environment
+# Runtime Environment (production requires real secrets and serves Secure cookies over HTTPS)
 NODE_ENV=development
 ```
 
@@ -365,26 +352,65 @@ NODE_ENV=development
 
 ### Step 1: Install All Dependencies
 ```bash
-npm install
-npm --prefix MediSage run install-all
+npm install                # backend + root tooling (also installs the client via install-all flow)
+npm run install-all        # backend + client dependencies
 ```
 
-### Step 2: Start Development Server
+### Step 2: Configure Environment
 ```bash
-# Concurrently runs Node.js Backend (:5000) and React 19 Frontend (:3000)
+cp .env.example .env       # then fill in MONGODB_URI, JWT_SECRET, FILE_ENCRYPTION_KEY, GOOGLE_CLIENT_ID
+```
+
+### Step 3: Start Development Server
+```bash
+# Concurrently runs the Node.js Backend (:5000) and React 19 Frontend (:3000)
 npm run dev
 ```
 
-Visit **`http://localhost:3000`** in your browser.
+Visit **`http://localhost:3000`** in your browser. The backend runs in a resilient offline mode with local JSON stores when MongoDB is unreachable, so the full app stays usable with degraded persistence.
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Verification
+
+The end-to-end backend suite covers 59 assertions across auth (rotation, token-version invalidation), documents, **encryption-at-rest on-disk verification**, httpOnly cookie sessions, audit trail, the clinical interaction engine, family vault, dashboard, FHIR export, AI routes, and security headers:
 
 ```bash
-cd MediSage
-node test-api.js
+# from the repository root — two terminals:
+node server/server.js        # terminal 1: backend on :5000
+node backend-tests.js        # terminal 2: run the suite
 ```
+
+In MongoDB-offline (resilient) mode the suite skips the DB-backed sections and marks them `[SKIP]`; every check passes locally. `test-api.js` is the legacy quick smoke suite and is kept for reference.
+
+---
+
+## 🔐 Security, Privacy & Compliance
+
+MediSage's backend is aligned with HIPAA Security Rule technical safeguards:
+
+1. **Encryption in transit & at rest** — uploaded clinical files never touch disk in plaintext: they are encrypted in RAM with a per-file AES-256-GCM envelope (`MSV1` magic header, 96-bit random IV, 128-bit auth tag) before persistence. Legacy plaintext files degrade transparently and are re-encrypted on first read. A failed GCM auth tag (tampering or wrong key) means the document is refused, not served.
+2. **Tamper-evident audit trail** — every security-relevant and PHI-touching event is recorded in a SHA-256 hash-chained audit log, reviewable by the patient (`/api/audit/me`) and integrity-attested (`/api/audit/verify`).
+3. **XSS-resistant session transport** — tokens are issued as `httpOnly`, `SameSite=Strict` cookies (and still available as JSON fields for native clients). JavaScript cannot read the primary session channel.
+4. **Session revocation** — changing a password bumps the user's `tokenVersion`, instantly invalidating every previously issued token; refresh tokens are single-use with DB-backed rotation and revocation on logout.
+5. **Defense-in-depth middleware** — `helmet` security headers, strict CORS origin whitelist with credentials, layered rate limiters (auth upload/AI/general), and expressive `express-validator` checks on every mutating route.
+6. **Secret hygiene** — `.env` (JWT secret, file-encryption key, Atlas credentials) is git-ignored;only the placeholder template `.env.example` is committed. Production refuses to boot without explicit strong secrets.
+7. **Trusted-server AI verification** — Google Sign-In credentials are verified server-side against Google's certificates; profile attributes are never accepted from the client, eliminating fabricated-data spoofing.
+
+---
+
+## 🗺 Roadmap
+
+- [x] P0 security hardening (headers, CORS, rate limiting, validation, secrets, file-type policy)
+- [x] Encryption at rest for clinical uploads (AES-256-GCM vault)
+- [x] Hash-chained audit trail & integrity attestation
+- [x] httpOnly cookie tokenization with rotation & revocation
+- [x] Clinical interaction engine, family vault, FHIR R4 passport, dashboard aggregates
+- [ ] Client migration to cookie-first transport (localStorage retirement)
+- [ ] Admin role management & audit review console
+- [ ] SMTP delivery for password-reset tokens
+- [ ] Redis-backed distributed rate-limit stores
+- [ ] Real PDF text extraction (`pdf-parse`/OCR pipeline)
 
 ---
 
