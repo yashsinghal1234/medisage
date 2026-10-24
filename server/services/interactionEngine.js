@@ -11,7 +11,7 @@
  *  - Fail-safe:     unknown drugs are reported as "unclassified", never ignored.
  */
 
-const { DRUG_CLASSES, SYNONYMS, DRUG_INTERACTIONS, CONDITION_RULES, ALLERGY_RULES } = require('../data/interactions');
+const { DRUG_CLASSES, SYNONYMS, DRUG_INTERACTIONS, CONDITION_RULES, ALLERGY_RULES } = require('../config/interactions');
 
 // ---------- helpers -------------------------------------------------
 
