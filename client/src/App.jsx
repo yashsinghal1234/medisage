@@ -11,6 +11,8 @@ import { AIInsights } from './pages/AIInsights';
 import { Insurance } from './pages/Insurance';
 import { Timeline } from './pages/Timeline';
 import { Profile } from './pages/Profile';
+import { MyScans } from './pages/MyScans';
+import { AdminConsole } from './pages/AdminConsole';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export function App() {
@@ -30,6 +32,22 @@ export function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/scans"
+            element={
+              <ProtectedRoute>
+                <MyScans />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminConsole />
               </ProtectedRoute>
             }
           />

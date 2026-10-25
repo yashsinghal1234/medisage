@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   FileText, Activity, Pill, Eye, LayoutGrid, List, 
   Search, ShieldCheck, Download, Trash2, ArrowRight, Sparkles, ChevronRight, Stethoscope,
-  X, ShieldAlert, ArrowUpRight, Check
+  X, ShieldAlert, ArrowUpRight, Check, Folder
 } from 'lucide-react';
 import { DashboardNavbar } from '../components/DashboardNavbar';
 import { Footer } from '../components/Footer';
@@ -130,16 +130,45 @@ export const Dashboard = () => {
             <PrimaryButton as={Link} href="/upload">
               + Deposit Record
             </PrimaryButton>
+            <Link
+              to="/scans"
+              style={{
+                backgroundColor: '#090a0d',
+                color: '#ffffff',
+                border: '1.5px solid #27272a',
+                padding: '13px 20px',
+                borderRadius: 'var(--radius-badges)',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.35)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.25)';
+              }}
+            >
+              <Folder size={16} color="#4ade80" />
+              <span>My Scans (3D View)</span>
+            </Link>
             <button
               onClick={() => setShowEmergencyModal(true)}
               style={{
                 backgroundColor: '#991b1b',
                 color: '#ffffff',
                 border: 'none',
-                padding: '13px 20px',
+                padding: '13px 22px',
                 borderRadius: 'var(--radius-badges)',
                 fontSize: '13.5px',
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',

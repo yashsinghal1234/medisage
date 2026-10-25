@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FileText, Upload, Activity, TrendingUp, ShieldAlert, 
-  Shield, QrCode, FileCode, Users, User, LogOut, HeartPulse, Check
+  Shield, QrCode, FileCode, Users, User, LogOut, HeartPulse, Check,
+  Folder, ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ProfileSwitcher } from './ProfileSwitcher';
@@ -316,7 +317,33 @@ export const DashboardNavbar = ({ onOpenEmergencyModal, onOpenPassportModal }) =
       >
         {/* DROPDOWN 1: RECORDS & VAULT */}
         {activeDropdown === 'records' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', width: '100%' }}>
+            <Link
+              to="/scans"
+              onClick={closeDropdownImmediately}
+              style={{
+                textDecoration: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                padding: '10px 12px',
+                borderRadius: '10px',
+                backgroundColor: '#f4fbf5',
+                border: '1px solid #dcf2e1',
+                transition: 'background-color 0.2s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#eaf7ed')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#f4fbf5')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Folder size={16} color="#16a34a" />
+                <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#16a34a' }}>My Scans</span>
+              </div>
+              <span style={{ fontSize: '12px', color: '#555555', lineHeight: 1.35 }}>
+                Visual 3D glowing folders for instant scan &amp; lab review.
+              </span>
+            </Link>
+
             <Link
               to="/dashboard"
               onClick={closeDropdownImmediately}
@@ -336,7 +363,7 @@ export const DashboardNavbar = ({ onOpenEmergencyModal, onOpenPassportModal }) =
                 <FileText size={16} color="#0f3e17" />
                 <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#0f3e17' }}>Vault Overview</span>
               </div>
-              <span style={{ fontSize: '12.5px', color: '#666666', lineHeight: 1.4 }}>
+              <span style={{ fontSize: '12px', color: '#666666', lineHeight: 1.35 }}>
                 Full archive of lab reports, prescriptions &amp; radiology scans.
               </span>
             </Link>
@@ -360,8 +387,8 @@ export const DashboardNavbar = ({ onOpenEmergencyModal, onOpenPassportModal }) =
                 <Upload size={16} color="#0f3e17" />
                 <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#0f3e17' }}>Deposit Record</span>
               </div>
-              <span style={{ fontSize: '12.5px', color: '#666666', lineHeight: 1.4 }}>
-                Multimodal upload with real-time OCR and LOINC coordinate extraction.
+              <span style={{ fontSize: '12px', color: '#666666', lineHeight: 1.35 }}>
+                Multimodal upload with OCR and coordinate extraction.
               </span>
             </Link>
 
@@ -384,7 +411,7 @@ export const DashboardNavbar = ({ onOpenEmergencyModal, onOpenPassportModal }) =
                 <Activity size={16} color="#0f3e17" />
                 <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#0f3e17' }}>Timeline &amp; Vitals</span>
               </div>
-              <span style={{ fontSize: '12.5px', color: '#666666', lineHeight: 1.4 }}>
+              <span style={{ fontSize: '12px', color: '#666666', lineHeight: 1.35 }}>
                 Chronological health diary of vitals and physician encounters.
               </span>
             </Link>
@@ -585,6 +612,29 @@ export const DashboardNavbar = ({ onOpenEmergencyModal, onOpenPassportModal }) =
             >
               <User size={15} color="#666" />
               <span>Health Profile Settings</span>
+            </Link>
+
+            <Link
+              to="/admin"
+              onClick={closeDropdownImmediately}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 10px',
+                borderRadius: '8px',
+                fontSize: '13.5px',
+                color: '#0f3e17',
+                fontWeight: 600,
+                textDecoration: 'none',
+                backgroundColor: '#f6faf7',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#eaf7ed')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#f6faf7')}
+            >
+              <ShieldCheck size={15} color="#16a34a" />
+              <span>Compliance &amp; Admin</span>
             </Link>
 
             <div style={{ borderTop: '1px solid #efeeeb', margin: '4px 0' }} />
