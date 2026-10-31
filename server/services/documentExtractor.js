@@ -112,10 +112,6 @@ const MEDICATION_RULES = [
   { name: 'Omega-3', code: 'RxNorm 353084', defaultDose: '1000mg Daily', regex: /(?:omega-3|fish\s*oil)/i },
 ];
 
-/**
- * Main Document Extraction function
- * Takes file metadata / buffer and returns structured clinical entities.
- */
 /** Real PDF text-layer extraction from a buffer sent to disk or held in RAM. */
 async function extractPdfText(file) {
   let buffer = null;
@@ -139,6 +135,55 @@ async function extractPdfText(file) {
   }
 }
 
+/**
+ * Scanned-PDF OCR: image-only pages have no text layer, so render each page
+ * to PNG (pdfjs-dist + @napi-rs/canvas, both bundled with pdf-parse v2) and
+ * run the same tesseract engine used for uploaded photos.
+ * Caps: first PDF_OCR_MAX_PAGES pages at PDF_OCR_WIDTH px — rendering is
+ * memory-heavy and lab reports rarely need more.
+ */
+const PDF_OCR_MAX_PAGES = 3;
+const PDF_OCR_WIDTH = 1600;
+
+async function ocrScannedPdf(file) {
+  let buffer = null;
+  if (file && Buffer.isBuffer(file.buffer)) {
+    buffer = file.buffer;
+  } else if (file && file.path && fs.existsSync(file.path)) {
+    buffer = fs.readFileSync(file.path);
+  }
+  if (!buffer) return '';
+  const parser = new PDFParse({ data: buffer });
+  try {
+    const shots = await parser.getScreenshot({
+      first: 1,
+      last: PDF_OCR_MAX_PAGES,
+      imageBuffer: true,
+      imageDataUrl: false,
+      desiredWidth: PDF_OCR_WIDTH,
+    });
+    const pages = (shots && Array.isArray(shots.pages)) ? shots.pages : [];
+    const texts = [];
+    for (const page of pages) {
+      const png = page && page.data ? Buffer.from(page.data) : null;
+      if (!png || !png.length) continue;
+      try {
+        const text = (await imageOcr.getTextWithOcr(png)).trim();
+        if (text) texts.push(text);
+      } catch (e) {
+        console.warn(`Scanned-PDF page ${page.pageNumber} OCR failed:`, e.message);
+      }
+    }
+    return texts.join('\n');
+  } finally {
+    await parser.destroy().catch(() => {});
+  }
+}
+
+/**
+ * Main Document Extraction function
+ * Takes file metadata / buffer and returns structured clinical entities.
+ */
 async function extractDocumentData(file, textContent = '') {
   let rawText = textContent || '';
   let source = textContent ? 'client-text' : '';
@@ -171,8 +216,9 @@ async function extractDocumentData(file, textContent = '') {
     }
   }
 
-  // REAL PDF extraction: read the embedded text layer (no OCR). Scanned
-  // image-only PDFs yield an empty layer — honest empties below.
+  // REAL PDF extraction: first the embedded text layer, then — for scanned
+  // image-only pages — rendering + OCR. Truly unreadable PDFs stay honestly
+  // empty below.
   if (!rawText && file && /\.pdf$/i.test(file.originalname || '')) {
     try {
       const pdfText = (await extractPdfText(file)).trim();
@@ -182,6 +228,17 @@ async function extractDocumentData(file, textContent = '') {
       }
     } catch (e) {
       console.warn('PDF text-layer extraction failed:', e.message);
+    }
+    if (!rawText) {
+      try {
+        const pdfOcrText = (await ocrScannedPdf(file)).trim();
+        if (pdfOcrText) {
+          rawText = pdfOcrText;
+          source = 'pdf-ocr';
+        }
+      } catch (e) {
+        console.warn('Scanned-PDF OCR failed:', e.message);
+      }
     }
   }
 

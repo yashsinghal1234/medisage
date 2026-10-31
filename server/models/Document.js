@@ -79,7 +79,7 @@ const documentSchema = new mongoose.Schema({
     extractedText: String,
     // ExtractedEntities provenance — how the entities were obtained:
     // client-text (typed by user) | client-input (entity payload from the UI)
-    // file-text | pdf-text | image-ocr (machine extraction)
+    // file-text | pdf-text | pdf-ocr | image-ocr (machine extraction)
     // demo-heuristic (DEV ONLY filename fallback) | 'none'/''
     extractionSource: String,
   },

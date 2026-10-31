@@ -99,6 +99,7 @@ const TRUSTED_EXTRACTION_SOURCES = new Set([
   'client-corrected', // human revised the record via PATCH
   'file-text', // .txt/.json/.csv/.hl7 payload
   'pdf-text', // real PDF text layer
+  'pdf-ocr', // scanned/image-only PDF rendered to pixels and OCR-read
   'image-ocr', // tesseract scan of image pixels
 ]);
 
