@@ -88,7 +88,6 @@ jobs:
   audit:
     name: Dependency audit (npm audit)
     runs-on: ubuntu-latest
-    continue-on-error: true # reporting job; does not gate merges yet
     steps:
       - uses: actions/checkout@v4
 

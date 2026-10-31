@@ -86,8 +86,25 @@ async function loadPatientContext(req) {
   return { user, documents, fromLocalStore };
 }
 
+/**
+ * Extraction paths whose entities are trustworthy — machine-read from real
+ * document content or human-entered/corrected. The dev demo filename
+ * heuristics (demo-heuristic) and unreadable media ('none', legacy '')
+ * are excluded so fabricated or unanchored values can never reach
+ * clinical analysis or the OpenAI prompts.
+ */
+const TRUSTED_EXTRACTION_SOURCES = new Set([
+  'client-text', // typed by the user
+  'client-input', // entity payload reviewed in the UI
+  'client-corrected', // human revised the record via PATCH
+  'file-text', // .txt/.json/.csv/.hl7 payload
+  'pdf-text', // real PDF text layer
+  'image-ocr', // tesseract scan of image pixels
+]);
+
 const patientFacts = (user, documents) => {
   const age = user?.dateOfBirth ? Math.floor((Date.now() - new Date(user.dateOfBirth)) / 31557600000) : null;
+  const verified = (documents || []).filter((d) => TRUSTED_EXTRACTION_SOURCES.has(d.metadata?.extractionSource));
   return {
     name: user?.name || 'the patient',
     age,
@@ -95,12 +112,14 @@ const patientFacts = (user, documents) => {
     allergies: user?.allergies || [],
     chronicConditions: user?.chronicConditions || [],
     documentCount: documents?.length || 0,
+    verifiedDocumentCount: verified.length,
     documentTypes: [...new Set((documents || []).map((d) => d.documentType))],
-    biomarkers: (documents || [])
+    // Only verified documents contribute values: extraction provenance decides
+    biomarkers: verified
       .map((d) => (d.metadata?.extractedEntities || []).map((e) => `${e.name}: ${e.value}`))
       .flat()
       .slice(0, 25),
-    medications: (documents || []).map((d) => (d.metadata?.medications || [])).flat().slice(0, 20),
+    medications: verified.map((d) => (d.metadata?.medications || [])).flat().slice(0, 20),
   };
 };
 
@@ -124,7 +143,7 @@ router.post('/analyze-history', authMiddleware, aiLimiter, async (req, res, next
           {
             role: 'system',
             content:
-              'You are MediSage, a careful clinical health-synthesis assistant. Use ONLY the provided patient facts; never invent biomarker values. Structure: 1) Clinical Overview 2) Botanical & Nutritional Guidance 3) Movement & Metabolic Protocol 4) Preventive Care Roadmap. Include a medical disclaimer line at the end.',
+              'You are MediSage, a careful clinical health-synthesis assistant. Use ONLY the provided patient facts; never invent biomarker values. Biomarker/medication values appear only for documents with verified extraction provenance (machine-read or human-corrected); untrusted documents were excluded. Structure: 1) Clinical Overview 2) Botanical & Nutritional Guidance 3) Movement & Metabolic Protocol 4) Preventive Care Roadmap. Include a medical disclaimer line at the end.',
           },
           {
             role: 'user',
@@ -141,7 +160,7 @@ router.post('/analyze-history', authMiddleware, aiLimiter, async (req, res, next
       }
     }
 
-    auditRecord({ action: 'ai_query', resourceType: 'ai', resourceId: null, req, userId: req.userId, meta: { kind: 'analyze_history', source: hasOpenAI() ? 'openai' : 'heuristic', documents: facts.documentCount } });
+    auditRecord({ action: 'ai_query', resourceType: 'ai', resourceId: null, req, userId: req.userId, meta: { kind: 'analyze_history', source: hasOpenAI() ? 'openai' : 'heuristic', documents: facts.documentCount, verified: facts.verifiedDocumentCount } });
 
     // Deterministic heuristic synthesis (no key configured)
     return res.json({
@@ -259,7 +278,7 @@ router.post('/chat', authMiddleware, aiLimiter, validate(chatChecks), async (req
     if (hasOpenAI()) {
       try {
         const systemContent =
-          'You are MediSage, a calm, evidence-based clinical AI assistant. Use ONLY these verified patient facts; if information is missing, say so instead of guessing. Patient facts (JSON): ' +
+          'You are MediSage, a calm, evidence-based clinical AI assistant. Use ONLY these verified patient facts; if information is missing, say so instead of guessing. Biomarker/medication values appear only for documents with verified extraction provenance (machine-read or human-corrected); documentCount minus verifiedDocumentCount were untrusted and excluded. Patient facts (JSON): ' +
           JSON.stringify(facts || {}) +
           ' Always include a short medical disclaimer when giving health guidance.';
         const reply = await openAiChat([{ role: 'system', content: systemContent }, ...messages]);
@@ -293,12 +312,16 @@ function buildStaticRecommendations(facts) {
 }
 function buildHeuristicAnalysis(facts) {
   const lines = [];
+  const unverifiedCount = (facts.documentCount || 0) - (facts.verifiedDocumentCount || 0);
   lines.push('### MediSage Synthesis (heuristic engine — no OpenAI key configured)');
   lines.push('');
   lines.push(`**1. Clinical Overview** — Vault contains ${facts.documentCount} document(s)`);
   if (facts.documentTypes.length) lines.push(`   Types on file: ${facts.documentTypes.join(', ')}.`);
-  if (facts.biomarkers.length) lines.push(`   Most recent biomarkers on record: ${facts.biomarkers.slice(0, 6).join('; ')}.`);
-  else lines.push('   No biomarkers extracted yet — upload a lab report to unlock longitudinal analysis.');
+  if (unverifiedCount > 0) {
+    lines.push(`   Provenance: ${facts.verifiedDocumentCount} verified (real text layer or human-corrected); ${unverifiedCount} without a trustworthy text layer — excluded from all values below.`);
+  }
+  if (facts.biomarkers.length) lines.push(`   Most recent verified biomarkers on record: ${facts.biomarkers.slice(0, 6).join('; ')}.`);
+  else lines.push('   No verified biomarkers extracted yet — upload a lab report with a readable text layer to unlock longitudinal analysis.');
   if (facts.chronicConditions.length) lines.push(`   Declared conditions: ${facts.chronicConditions.join(', ')}.`);
   if (facts.allergies.length) lines.push(`   Documented allergies: ${facts.allergies.join(', ')} — always flag these to prescribers.`);
   lines.push('');

@@ -210,9 +210,11 @@ router.post('/upload', authMiddleware, upload.any(), handleMulterError, async (r
     const parsedMeds = parseArrayField(medications);
 
     let parsedEntities = [];
+    let entitiesFromClient = false;
     if (req.body.extractedEntities) {
       try {
         parsedEntities = typeof req.body.extractedEntities === 'string' ? JSON.parse(req.body.extractedEntities) : req.body.extractedEntities;
+        entitiesFromClient = Array.isArray(parsedEntities) && parsedEntities.length > 0;
       } catch {}
     }
 
@@ -223,6 +225,10 @@ router.post('/upload', authMiddleware, upload.any(), handleMulterError, async (r
       } catch {}
     }
 
+    // Provenance for downstream consumers (AI routes trust only honest
+    // extraction paths, never the dev demo filename heuristics).
+    let extractionSource = entitiesFromClient ? 'client-input' : '';
+
     // Autonomous extraction fallback for anything the client did not supply.
     // textContent (typed text or the .txt payload of the file) feeds the parser.
     if ((parsedEntities.length === 0 || parsedBiomarkers.length === 0) && storedFile) {
@@ -232,6 +238,11 @@ router.post('/upload', authMiddleware, upload.any(), handleMulterError, async (r
         if (parsedEntities.length === 0) parsedEntities = autoExtracted.extractedEntities;
         if (parsedBiomarkers.length === 0) parsedBiomarkers = autoExtracted.biomarkers;
         if (!diagnosis && autoExtracted.diagnosis) req.body.diagnosis = autoExtracted.diagnosis;
+        if ((parsedEntities.length > 0 || parsedBiomarkers.length > 0) && autoExtracted.source) {
+          extractionSource = autoExtracted.source;
+        } else if (!extractionSource) {
+          extractionSource = autoExtracted.source || 'none';
+        }
       } catch (err) {
         console.warn('Auto-extraction fallback non-fatal error:', err.message);
       }
@@ -257,6 +268,7 @@ router.post('/upload', authMiddleware, upload.any(), handleMulterError, async (r
         medications: parsedMeds,
         biomarkers: parsedBiomarkers,
         extractedEntities: parsedEntities,
+        extractionSource,
       },
     };
 
@@ -471,6 +483,9 @@ router.patch(
           if (req.body.metadata[k] !== undefined) allowedMeta[k] = req.body.metadata[k];
         });
         for (const [k, v] of Object.entries(allowedMeta)) patch[`metadata.${k}`] = v;
+        // Human corrections outrank the extraction origin: provenance flips to
+        // client-corrected so downstream consumers know a person reviewed it.
+        if (Object.keys(allowedMeta).length) patch['metadata.extractionSource'] = 'client-corrected';
       }
 
       if (useMongoStore(req)) {
